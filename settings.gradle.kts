@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AP2"
+rootProject.name = "MoCo_2026"
 include(":app")
