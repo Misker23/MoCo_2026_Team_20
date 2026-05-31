@@ -98,7 +98,7 @@ fun Setting_Button() {
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
-            shape = CircleShape
+            shape = RectangleShape
         ) {
             Text(text = "Setting", textAlign = TextAlign.Center, maxLines = 1)
         }
@@ -146,7 +146,7 @@ fun POI_Button() {
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            shape = CircleShape
+            shape = RectangleShape
         ) {
             Text(text = "POI", textAlign = TextAlign.Center, maxLines = 1)
         }
