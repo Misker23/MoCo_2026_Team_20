@@ -111,23 +111,24 @@ fun HomeScreenPreview() {
 fun SmallMarker(onExpandRequested: () -> Unit) {
     var isSneakPeekVisible by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier) {
+    Box() {
         Icon(
-            modifier = Modifier.clickable { isSneakPeekVisible = true },
             painter = painterResource(R.drawable.baseline_place_24),
-            contentDescription = null
+            contentDescription = null,
+            tint = Color.Red,
+            modifier = Modifier
+                .size(48.dp)
+                .clickable { isSneakPeekVisible = true },
         )
 
-        // 2. The Small Popup (Sneak Peek)
         if (isSneakPeekVisible) {
-
-                SneakPeekMarker(
-                    onDismiss = { isSneakPeekVisible = false },
-                    onExpand = {
-                        onExpandRequested()
-                        isSneakPeekVisible = false // Close small when opening big
-                    }
-                )
+            SneakPeekMarker(
+                onDismiss = { isSneakPeekVisible = false },
+                onExpand = {
+                    onExpandRequested()
+                    isSneakPeekVisible = false // Close small when opening big
+                }
+            )
         }
     }
 }
