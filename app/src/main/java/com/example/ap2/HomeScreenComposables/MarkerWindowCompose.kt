@@ -1,4 +1,4 @@
-package com.example.ap2
+package com.example.ap2.HomeScreenComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
+fun MarkerWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
     //State Remember für die Beschreibung, damit das was im Feld eingegeben wird auch zwischengespeichert wird
     var description by remember { mutableStateOf("") }
     //Popup Fenster für OpenedMarker
@@ -63,7 +63,7 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            //Button zum schließen des Screens, da es ein größerer Screen ist
+            //Button zum schließen des Screens, da es ein größeres Window ist
             Button(onClick = onDismiss) { Text("Close") }
         }
     }
@@ -71,6 +71,6 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
 
 @Preview
 @Composable
-fun OpenedMarkerPreview() {
-    OpenedMarker(bottomPadding = 0.dp, onDismiss = {})
+fun MarkerWindowPreview() {
+    MarkerWindow(bottomPadding = 0.dp, onDismiss = {})
 }

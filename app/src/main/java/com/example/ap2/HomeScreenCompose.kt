@@ -1,14 +1,13 @@
 package com.example.ap2
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -22,20 +21,54 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ap2.HomeScreenComposables.FriendsButton
+import com.example.ap2.HomeScreenComposables.MarkerWindow
+import com.example.ap2.HomeScreenComposables.POIButton
+import com.example.ap2.HomeScreenComposables.POIWindow
+import com.example.ap2.HomeScreenComposables.ProfileButton
+import com.example.ap2.HomeScreenComposables.SettingButton
+import com.example.ap2.HomeScreenComposables.SettingWindow
+import com.example.ap2.HomeScreenComposables.SmallMarker
 import com.example.ap2.ui.theme.MoCo_2026Theme
 
 @Composable
 fun HomeScreen() {
     //State Remember für MarkerScreen, ob dieser angezeigt wird oder nicht
-    var isMarkerScreenVisible by remember { mutableStateOf(false) }
+    var isMarkerWindowVisable by remember { mutableStateOf(false) }
+    var isPoiWindowVisable by remember { mutableStateOf(false) }
+    var isSettingWindowVisable by remember { mutableStateOf(false) }
     //Einteilung des HomeScreens in mehrere Sektionen (Hauptcontent, Bottom Navigation Bar)
     Scaffold(
         //Bottom Navigation Bar ohne buttons
         bottomBar = {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .background(Color.Gray))
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 1.dp,
+                color = Color.LightGray.copy(alpha = .5f)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ){
+                POIButton(
+                    onClick = { isPoiWindowVisable = true },
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                FriendsButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                SettingButton(
+                    onClick = { isSettingWindowVisable = true },
+                    modifier = Modifier
+                        .weight(1f)
+                )
+            }
         },
         //Add Marker button ohne Funktion
         floatingActionButton = {
@@ -48,6 +81,11 @@ fun HomeScreen() {
         }
         //Padding damit die Bottom Bar und Hauptcontent getrennt sind
     ) {contentPadding ->
+
+        ProfileButton(
+            modifier = Modifier
+                .padding(start = 16.dp, top = 12.dp)
+        )
         //um den Marker bisher in der Mitte anzuzeigen
         Column(
             modifier = Modifier
@@ -57,14 +95,30 @@ fun HomeScreen() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //damit der initial Marker auf der "map" zu sehen ist und anklickbar ist
-            SmallMarker(onExpandRequested = {isMarkerScreenVisible = true})
+            SmallMarker(onExpandRequested = { isMarkerWindowVisable = true })
         }
         //hier damit der Screen vom Boden des Hauptcontents erscheint statt komplett unten oder vom Marker aus
-        if (isMarkerScreenVisible) {
-            OpenedMarker(
+        if (isMarkerWindowVisable) {
+            MarkerWindow(
                 //damit der Screen die Bottombar nicht überdeckt
-                bottomPadding = contentPadding.calculateBottomPadding(),
-                onDismiss = { isMarkerScreenVisible = false }
+                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                onDismiss = { isMarkerWindowVisable = false }
+            )
+        }
+
+        if (isPoiWindowVisable) {
+            POIWindow(
+                //damit der Screen die Bottombar nicht überdeckt
+                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                onDismiss = { isPoiWindowVisable = false }
+            )
+        }
+
+        if (isSettingWindowVisable) {
+            SettingWindow(
+                //damit der Screen die Bottombar nicht überdeckt
+                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                onDismiss = { isSettingWindowVisable = false }
             )
         }
     }
