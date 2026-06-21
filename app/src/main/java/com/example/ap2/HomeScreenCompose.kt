@@ -32,57 +32,35 @@ import com.example.ap2.HomeScreenComposables.SmallMarker
 import com.example.ap2.ui.theme.MoCo_2026Theme
 
 @Composable
-fun HomeScreen() {
-    //State Remember für MarkerScreen, ob dieser angezeigt wird oder nicht
+fun HomeScreen(
+    onNavigateToFriends: () -> Unit // Parameter für Navigation hinzugefügt
+) {
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
     var isPoiWindowVisable by remember { mutableStateOf(false) }
     var isSettingWindowVisable by remember { mutableStateOf(false) }
-    //Einteilung des HomeScreens in mehrere Sektionen (Hauptcontent, Bottom Navigation Bar)
+
     Scaffold(
-        //Bottom Navigation Bar ohne buttons
         bottomBar = {
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                thickness = 1.dp,
-                color = Color.LightGray.copy(alpha = .5f)
-            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ){
-                POIButton(
-                    onClick = { isPoiWindowVisable = true },
-                    modifier = Modifier
-                        .weight(1f)
-                )
-                FriendsButton(
-                    onClick = {},
-                    modifier = Modifier
-                        .weight(1f)
-                )
-                SettingButton(
-                    onClick = { isSettingWindowVisable = true },
-                    modifier = Modifier
-                        .weight(1f)
-                )
-            }
-        },
-        //Add Marker button ohne Funktion
-        floatingActionButton = {
-            FloatingActionButton(onClick = {}) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_add_location_alt_24),
-                    contentDescription = null
-                )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ProfileButton(onClick = {}, modifier = Modifier)
+                POIButton(onClick = { isPoiWindowVisable = true }, modifier = Modifier)
+
+                // Hier das Lambda übergeben
+                FriendsButton(onClick = onNavigateToFriends, modifier = Modifier)
+
+                SettingButton(onClick = { isSettingWindowVisable = true }, modifier = Modifier)
             }
         }
-        //Padding damit die Bottom Bar und Hauptcontent getrennt sind
-    ) {contentPadding ->
+    ) { contentPadding ->
 
         ProfileButton(
+            onClick = {},
             modifier = Modifier
                 .padding(start = 16.dp, top = 12.dp)
         )
@@ -94,7 +72,7 @@ fun HomeScreen() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //damit der initial Marker auf der "map" zu sehen ist und anklickbar ist
+            //damit der initiale Marker auf der "map" zu sehen ist und anklickbar ist
             SmallMarker(onExpandRequested = { isMarkerWindowVisable = true })
         }
         //hier damit der Screen vom Boden des Hauptcontents erscheint statt komplett unten oder vom Marker aus
@@ -128,6 +106,6 @@ fun HomeScreen() {
 @Composable
 fun HomeScreenPreview() {
     MoCo_2026Theme() {
-        HomeScreen()
+        HomeScreen(onNavigateToFriends = {})
     }
 }

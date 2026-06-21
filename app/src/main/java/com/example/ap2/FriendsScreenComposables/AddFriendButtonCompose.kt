@@ -2,13 +2,7 @@ package com.example.ap2.FriendsScreenComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -22,7 +16,9 @@ import androidx.compose.ui.unit.dp
 import com.example.ap2.R
 
 @Composable
-fun AddFriendButton() {
+fun AddFriendButton(
+    onClick: () -> Unit // Parameter hinzugefügt
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -30,7 +26,7 @@ fun AddFriendButton() {
                 color = Color.LightGray.copy(alpha = 0.7f),
                 shape = RoundedCornerShape(12.dp)
             )
-            .clickable(onClick = { /* TODO */ })
+            .clickable(onClick = onClick) // Das übergebene Lambda wird hier aufgerufen
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -38,8 +34,7 @@ fun AddFriendButton() {
             Icon(
                 painter = painterResource(id = R.drawable.baseline_add_24),
                 contentDescription = null,
-                modifier = Modifier
-                    .size(24.dp)
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "Add Friend")
@@ -50,5 +45,6 @@ fun AddFriendButton() {
 @Preview
 @Composable
 fun AddFriendButtonPreview() {
-    AddFriendButton()
+    // Ein leeres Lambda {} für den onClick-Parameter
+    AddFriendButton(onClick = {})
 }
