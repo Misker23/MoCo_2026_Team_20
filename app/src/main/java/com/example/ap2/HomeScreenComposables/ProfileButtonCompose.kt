@@ -10,7 +10,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.ap2.ui.theme.MoCo_2026Theme
 
 @Composable
-fun ProfileButton(modifier: Modifier) {
+fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     var showMenu by remember { mutableStateOf(false) }
     Button(
         onClick = { showMenu = true },
@@ -28,10 +28,8 @@ fun ProfileButton(modifier: Modifier) {
 
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
-fun ProfilButtonPreview() {
-    MoCo_2026Theme {
-        ProfileButton(modifier = Modifier)
-    }
+fun ProfileButtonPreview() {
+    ProfileButton(onClick = {})
 }
