@@ -55,7 +55,7 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
             Box(Modifier
                 .size(250.dp, 250.dp)
                 .background(Color.Black))
-            //Textfeld, um die Beschreibung einzugeben, behält die Beschreibung noch nicht und gibt sie nicht weiter an SneakPeekMarker
+            //Textfeld um die Beschreibung einzugeben, behält die Beschreibung noch nicht und gibt sie nicht weiter an SneakPeekMarker
             TextField(
                 //was bisher im Textfeld steht
                 value = description,
