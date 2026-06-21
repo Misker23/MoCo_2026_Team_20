@@ -3,17 +3,20 @@ import org.gradle.accessors.dm.LibrariesForLibs
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.example.ap2"
-    compileSdk = 37
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.ap2"
         minSdk = 33
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -59,6 +62,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.navigation:navigation-compose:2.9.8")
-    implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
-    implementation(libs.maplibre.compose)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 }
