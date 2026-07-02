@@ -26,7 +26,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
+fun MarkerWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
     //State Remember für die Beschreibung, damit das was im Feld eingegeben wird auch zwischengespeichert wird
     var description by remember { mutableStateOf("") }
     //Popup Fenster für OpenedMarker
@@ -55,7 +55,7 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
             Box(Modifier
                 .size(250.dp, 250.dp)
                 .background(Color.Black))
-            //Textfeld um die Beschreibung einzugeben, behält die Beschreibung noch nicht und gibt sie nicht weiter an SneakPeekMarker
+            //Textfeld, um die Beschreibung einzugeben, behält die Beschreibung noch nicht und gibt sie nicht weiter an SneakPeekMarker
             TextField(
                 //was bisher im Textfeld steht
                 value = description,
@@ -63,7 +63,7 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            //Button zum schließen des Screens, da es ein größerer Screen ist
+            //Button zum schließen des Screens, da es ein größeres Window ist
             Button(onClick = onDismiss) { Text("Close") }
         }
     }
@@ -71,6 +71,6 @@ fun OpenedMarker(bottomPadding: Dp, onDismiss: () -> Unit) {
 
 @Preview
 @Composable
-fun OpenedMarkerPreview() {
-    OpenedMarker(bottomPadding = 0.dp, onDismiss = {})
+fun MarkerWindowPreview() {
+    MarkerWindow(bottomPadding = 0.dp, onDismiss = {})
 }

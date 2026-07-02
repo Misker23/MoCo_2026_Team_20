@@ -1,6 +1,7 @@
-package com.example.ap2
+package com.example.ap2.HomeScreenComposables
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ap2.R
 
 @Composable
 fun SmallMarker(onExpandRequested: () -> Unit) {
@@ -34,7 +36,7 @@ fun SmallMarker(onExpandRequested: () -> Unit) {
                 .size(48.dp)
                 .clickable(
                     //damit kein graußes Quadrat im Hintergrund ist
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null
                     // zeigt den SneakPeekMarker an
                 ) { isSneakPeekVisible = true },

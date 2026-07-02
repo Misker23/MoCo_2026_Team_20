@@ -1,4 +1,4 @@
-package com.example.ap2
+package com.example.ap2.HomeScreenComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
