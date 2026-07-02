@@ -23,6 +23,7 @@ fun SmallMarker(onExpandRequested: () -> Unit) {
     var isSneakPeekVisible by remember { mutableStateOf(false) }
 
     //box damit der Marker in der Mitte ist
+
     Box() {
         //damit der Button nur das Icon ist
         Icon(

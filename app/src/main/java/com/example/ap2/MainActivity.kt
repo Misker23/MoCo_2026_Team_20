@@ -36,8 +36,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MoCo_2026Theme {
-                //HomeScreen()
-                MapScreen()
+                HomeScreen()
+                //MapScreen()
             }
         }
     }

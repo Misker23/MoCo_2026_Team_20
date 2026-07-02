@@ -27,10 +27,13 @@ import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.Position
+import com.example.ap2.HomeScreenComposables.SmallMarker
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun MapScreen() {
+fun MapScreen(
+    onMapClick: (Position) -> Unit,
+) {
     // erzeugt Kamera und gibt ihr eine Startposition
     val camera = rememberCameraState(
         firstPosition = CameraPosition(
@@ -41,8 +44,10 @@ fun MapScreen() {
             zoom = 16.5,
         )
     )
+
+
     // speichert Daten eines Klicks
-    var clickedPosition by remember { mutableStateOf<Position?>(null) }
+    /*var clickedPosition by remember { mutableStateOf<Position?>(null) }
 
     // erzeugt eine sanfte Animation zur neuen Position
     LaunchedEffect(clickedPosition) {
@@ -55,7 +60,7 @@ fun MapScreen() {
                 duration = 1.5.seconds
             )
         }
-    }
+    }*/
 
     //UI Anpassung
     Box(
@@ -76,7 +81,8 @@ fun MapScreen() {
             //Speichert aktuelle Position
             onMapClick = { pos, offset ->
 
-                clickedPosition = pos
+                //clickedPosition = pos
+                onMapClick(pos)
                 Log.d("MapScreen", "Position: $pos")
                 ClickResult.Consume
             },
@@ -103,6 +109,7 @@ fun MapScreen() {
 
                     )
         )
+
     }
     //val variant = if (isSystemInDarkTheme()) "dark" else "light"
 
