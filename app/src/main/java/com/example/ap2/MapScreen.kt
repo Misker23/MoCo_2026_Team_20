@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun MapScreen() {
-
+    // erzeugt Kamera und gibt ihr eine Startposition
     val camera = rememberCameraState(
         firstPosition = CameraPosition(
             target = Position(
@@ -41,8 +41,10 @@ fun MapScreen() {
             zoom = 16.5,
         )
     )
+    // speichert Daten eines Klicks
     var clickedPosition by remember { mutableStateOf<Position?>(null) }
 
+    // erzeugt eine sanfte Animation zur neuen Position
     LaunchedEffect(clickedPosition) {
         clickedPosition?.let { pos ->
             camera.animateTo(
@@ -55,17 +57,23 @@ fun MapScreen() {
         }
     }
 
+    //UI Anpassung
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(WindowInsets.systemBars.asPaddingValues())
     ){
+        //bindet MapLibre ein
         MaplibreMap(
             //baseStyle = BaseStyle.Uri(
             //    "https://api.protomaps.com/styles/v4/$variant/en.json?key=MY_KEY"),
+
+            //definiert den visuellen Stil der Map
             baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
 
             cameraState = camera,
+
+            //Speichert aktuelle Position
             onMapClick = { pos, offset ->
 
                 clickedPosition = pos
@@ -75,6 +83,7 @@ fun MapScreen() {
 
             options =
                 MapOptions(
+                    //definiert erlaubte Gesten der Karte
                     gestureOptions =
                         GestureOptions(
                             isTiltEnabled = false,
@@ -82,9 +91,9 @@ fun MapScreen() {
                             isRotateEnabled = true,
                             isScrollEnabled = true,
                         ),
+                    //definiert angezeigte Overlays
                     ornamentOptions =
                         OrnamentOptions(
-                            //padding = PaddingValues(1.dp),
                             isCompassEnabled = true,
                             compassAlignment = Alignment.TopEnd,
                             isScaleBarEnabled = true,
