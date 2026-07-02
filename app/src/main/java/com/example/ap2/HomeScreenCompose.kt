@@ -99,11 +99,17 @@ fun HomeScreen() {
 
             markerPosition?.let { pos ->
 
-                SmallMarker(
-                    onExpandRequested = {
-                        isMarkerWindowVisable = true
-                    }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 )
+                {
+                    SmallMarker(
+                        onExpandRequested = {
+                            isMarkerWindowVisable = true
+                        }
+                    )
+                }
             }
 
             ProfileButton(
