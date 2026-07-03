@@ -97,21 +97,6 @@ fun HomeScreen() {
                 }
             )
 
-            markerPosition?.let { pos ->
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                )
-                {
-                    SmallMarker(
-                        onExpandRequested = {
-                            isMarkerWindowVisable = true
-                        }
-                    )
-                }
-            }
-
             ProfileButton(
                 modifier = Modifier
                     .padding(start = 16.dp, top = 12.dp)
