@@ -1,6 +1,7 @@
 package com.example.ap2
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,75 +31,114 @@ import com.example.ap2.HomeScreenComposables.SettingButton
 import com.example.ap2.HomeScreenComposables.SettingWindow
 import com.example.ap2.HomeScreenComposables.SmallMarker
 import com.example.ap2.ui.theme.MoCo_2026Theme
+import org.maplibre.spatialk.geojson.Position
 
 @Composable
-fun HomeScreen(
-    onNavigateToFriends: () -> Unit // Parameter für Navigation hinzugefügt
-) {
+fun HomeScreen() {
+    //State Remember für MarkerScreen, ob dieser angezeigt wird oder nicht
+    var markerPosition by remember { mutableStateOf<Position?>(null) }
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
     var isPoiWindowVisable by remember { mutableStateOf(false) }
     var isSettingWindowVisable by remember { mutableStateOf(false) }
-
+    //Einteilung des HomeScreens in mehrere Sektionen (Hauptcontent, Bottom Navigation Bar)
     Scaffold(
+        //Bottom Navigation Bar ohne buttons
         bottomBar = {
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 1.dp,
+                color = Color.LightGray.copy(alpha = .5f)
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ProfileButton(onClick = {}, modifier = Modifier)
-                POIButton(onClick = { isPoiWindowVisable = true }, modifier = Modifier)
-
-                // Hier das Lambda übergeben
-                FriendsButton(onClick = onNavigateToFriends, modifier = Modifier)
-
-                SettingButton(onClick = { isSettingWindowVisable = true }, modifier = Modifier)
+                verticalAlignment = Alignment.CenterVertically,
+            ){
+                POIButton(
+                    onClick = { isPoiWindowVisable = true },
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                FriendsButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                SettingButton(
+                    onClick = { isSettingWindowVisable = true },
+                    modifier = Modifier
+                        .weight(1f)
+                )
+            }
+        },
+        //Add Marker button ohne Funktion
+        floatingActionButton = {
+            FloatingActionButton(onClick = {}) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_add_location_alt_24),
+                    contentDescription = null
+                )
             }
         }
-    ) { contentPadding ->
+        //Padding damit die Bottom Bar und Hauptcontent getrennt sind
+    ) {contentPadding ->
 
-        ProfileButton(
-            onClick = {},
-            modifier = Modifier
-                .padding(start = 16.dp, top = 12.dp)
-        )
-        //um den Marker bisher in der Mitte anzuzeigen
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(contentPadding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            //damit der initiale Marker auf der "map" zu sehen ist und anklickbar ist
-            SmallMarker(onExpandRequested = { isMarkerWindowVisable = true })
-        }
-        //hier damit der Screen vom Boden des Hauptcontents erscheint statt komplett unten oder vom Marker aus
-        if (isMarkerWindowVisable) {
-            MarkerWindow(
-                //damit der Screen die Bottombar nicht überdeckt
-                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                onDismiss = { isMarkerWindowVisable = false }
+                .padding(contentPadding)
+        )
+        {
+            MapScreen(
+                onMapClick = { pos ->
+                    markerPosition = pos
+                }
             )
+
+            ProfileButton(
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 12.dp)
+            )
+            //um den Marker bisher in der Mitte anzuzeigen
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                //damit der initial Marker auf der "map" zu sehen ist und anklickbar ist
+                //SmallMarker(onExpandRequested = { isMarkerWindowVisable = true })
+            }
+            //hier damit der Screen vom Boden des Hauptcontents erscheint statt komplett unten oder vom Marker aus
+            if (isMarkerWindowVisable) {
+                MarkerWindow(
+                    //damit der Screen die Bottombar nicht überdeckt
+                    bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                    onDismiss = { isMarkerWindowVisable = false }
+                )
+            }
+
+            if (isPoiWindowVisable) {
+                POIWindow(
+                    //damit der Screen die Bottombar nicht überdeckt
+                    bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                    onDismiss = { isPoiWindowVisable = false }
+                )
+            }
+
+            if (isSettingWindowVisable) {
+                SettingWindow(
+                    //damit der Screen die Bottombar nicht überdeckt
+                    bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                    onDismiss = { isSettingWindowVisable = false }
+                )
+            }
         }
 
-        if (isPoiWindowVisable) {
-            POIWindow(
-                //damit der Screen die Bottombar nicht überdeckt
-                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                onDismiss = { isPoiWindowVisable = false }
-            )
-        }
 
-        if (isSettingWindowVisable) {
-            SettingWindow(
-                //damit der Screen die Bottombar nicht überdeckt
-                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                onDismiss = { isSettingWindowVisable = false }
-            )
-        }
     }
 }
 
@@ -106,6 +146,6 @@ fun HomeScreen(
 @Composable
 fun HomeScreenPreview() {
     MoCo_2026Theme() {
-        HomeScreen(onNavigateToFriends = {})
+        HomeScreen()
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
@@ -47,10 +49,10 @@ fun MapScreen(
 
 
     // speichert Daten eines Klicks
-    /*var clickedPosition by remember { mutableStateOf<Position?>(null) }
+    var clickedPosition by remember { mutableStateOf<Position?>(null) }
 
     // erzeugt eine sanfte Animation zur neuen Position
-    LaunchedEffect(clickedPosition) {
+    /*LaunchedEffect(clickedPosition) {
         clickedPosition?.let { pos ->
             camera.animateTo(
                 finalPosition = camera.position.copy(
@@ -81,7 +83,7 @@ fun MapScreen(
             //Speichert aktuelle Position
             onMapClick = { pos, offset ->
 
-                //clickedPosition = pos
+                clickedPosition = pos
                 onMapClick(pos)
                 Log.d("MapScreen", "Position: $pos")
                 ClickResult.Consume
@@ -105,10 +107,32 @@ fun MapScreen(
                             isScaleBarEnabled = true,
                             scaleBarAlignment = Alignment.TopStart,
 
-                            ),
-
+                            )
                     )
         )
+        clickedPosition?.let { geoPos ->
+            // WICHTIG: Durch das bloße Auslesen von camera.position weiß Compose,
+            // dass dieser Block bei JEDER Kartenbewegung neu berechnet werden muss!
+            val currentCamera = camera.position
+
+            // Jetzt holen wir uns die jeweils aktuelle Bildschirm-Position
+            val screenPos = camera.projection?.screenLocationFromPosition(geoPos)
+
+            if (screenPos != null) {
+                Box(
+                    modifier = Modifier.offset(
+                        x = screenPos.x - 24.dp,
+                        y = screenPos.y - 24.dp
+                    )
+                ) {
+                    SmallMarker(
+                        onExpandRequested = {
+                            Log.d("MapScreen", "Marker clicked")
+                        }
+                    )
+                }
+            }
+        }
 
     }
     //val variant = if (isSystemInDarkTheme()) "dark" else "light"
