@@ -2,8 +2,10 @@ package com.example.ap2
 
 import kotlinx.serialization.Serializable
 
+// Changed to 'data object' to fix SerializationException for type-safe navigation
 @Serializable
-object HomeRoute
+data object HomeRoute
 
+// Changed to 'data object' to fix SerializationException for type-safe navigation
 @Serializable
-object FriendsRoute
+data object FriendsRoute
