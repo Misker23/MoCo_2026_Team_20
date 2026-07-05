@@ -61,4 +61,10 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.8")
     implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
     implementation(libs.maplibre.compose)
+    // CameraX
+    val camerax_version = "1.4.1"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
 }
