@@ -67,4 +67,10 @@ dependencies {
     implementation(libs.maplibre.compose)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
 
+    // CameraX
+    val camerax_version = "1.4.1"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
 }

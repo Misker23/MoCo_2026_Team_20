@@ -1,4 +1,4 @@
-package com.example.ap2
+package com.example.ap2.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
