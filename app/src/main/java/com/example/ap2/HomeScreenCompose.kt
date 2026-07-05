@@ -144,10 +144,13 @@ fun HomeScreen(
             )
 
             // 2. UI-Elemente
-            ProfileButton(
-                onClick = {},
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp)
-            )
+            if (viewModel.currentMode == MapMode.DEFAULT) {
+                ProfileButton(
+                    onClick = {},
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                )
+            }
+
 
             if (isMarkerWindowVisable) {
                 MarkerWindow(
@@ -156,43 +159,46 @@ fun HomeScreen(
                 )
             }
             //Kompass und Schritte und Handyausrichtung
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .background(
-                        Color.Black.copy(alpha = 0.5f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Schritte anzeigen
-                Text(
-                    text = "Schritte: ${steps.toInt()}",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Kompass-Icon
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_place_24), // Beispiel-Icon
-                    contentDescription = "Kompass",
-                    tint = Color.Red,
+            if (viewModel.currentMode == MapMode.DEFAULT) {
+                Column(
                     modifier = Modifier
-                        .size(40.dp)
-                        // Die negative Drehung sorgt dafür, dass die Nadel immer nach Norden zeigt
-                        .rotate(-compassDegree)
-                )
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Schritte anzeigen
+                    Text(
+                        text = "Schritte: ${steps.toInt()}",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
 
-                Text(
-                    text = "${compassDegree.toInt()}°",
-                    color = Color.White,
-                    fontSize = 10.sp
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Kompass-Icon
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_place_24), // Beispiel-Icon
+                        contentDescription = "Kompass",
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .size(40.dp)
+                            // Die negative Drehung sorgt dafür, dass die Nadel immer nach Norden zeigt
+                            .rotate(-compassDegree)
+                    )
+
+                    Text(
+                        text = "${compassDegree.toInt()}°",
+                        color = Color.White,
+                        fontSize = 10.sp
+                    )
+                }
             }
+
 
         // 3. Popups/Fenster (erscheinen über allem)
         if (isMarkerWindowVisable) {
