@@ -33,10 +33,8 @@ import org.maplibre.spatialk.geojson.Position
 
 @Composable
 fun HomeScreen(
+    viewModel: MapViewModel = viewModel(),
     onNavigateToFriends: () -> Unit
-) {
-fun HomeScreen(
-    viewModel: MapViewModel = viewModel()
 ) {
     var markerPosition by remember { mutableStateOf<Position?>(null) }
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
@@ -63,7 +61,7 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
                 FriendsButton(
-                    onClick = {},
+                    onClick = { onNavigateToFriends() },
                     modifier = Modifier.weight(1f)
                 )
                 SettingButton(
@@ -104,6 +102,7 @@ fun HomeScreen(
             )
 
             ProfileButton(
+                onClick = {},
                 modifier = Modifier.padding(start = 16.dp, top = 12.dp)
             )
 
