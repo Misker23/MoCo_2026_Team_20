@@ -1,16 +1,21 @@
 package com.example.ap2.MapScreenComposeables
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
@@ -31,7 +36,7 @@ fun MapScreen(
 ) {
     val camera = rememberCameraState(
         firstPosition = CameraPosition(
-            target = Position(latitude = 51.023215, longitude = 7.56198),
+            target = viewModel.userPosition,
             zoom = 16.5,
         )
     )
@@ -57,8 +62,28 @@ fun MapScreen(
             )
         )
 
-        // Kamera-State belauschen für das flüssige Mitwandern
+        // Kamera-State
         val currentCameraState = camera.position
+
+        // GPS eigner Standort (gefaked)
+        val userScreenPos = camera.projection?.screenLocationFromPosition(viewModel.userPosition)
+        if (userScreenPos != null) {
+            Box(
+                modifier = Modifier
+                    .offset(x = userScreenPos.x - 12.dp, y = userScreenPos.y - 12.dp) // Mittig platzieren
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF2196F3)) // Blau Farbe
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .align(Alignment.Center)
+                )
+            }
+        }
 
         // gespeicherte Marker setzen
         viewModel.savedMarkers.forEach { savedPos ->

@@ -22,6 +22,7 @@ class MapViewModel : ViewModel() {
     // Liste aller Marker
     val savedMarkers = mutableStateListOf<Position>()
 
+    val userPosition = Position(latitude = 51.023215, longitude = 7.56198)
     fun startPlacingMode() {
         currentMode = MapMode.PLACING_MARKER
     }
