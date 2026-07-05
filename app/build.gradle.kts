@@ -59,5 +59,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.maplibre.compose)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
 
 }
