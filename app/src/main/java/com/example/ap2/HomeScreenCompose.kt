@@ -91,6 +91,8 @@ fun HomeScreen(
                 onClick = {},
                 modifier = Modifier.padding(start = 16.dp, top = 12.dp)
             )
+
+            //Kompass und Schritte und Handyausrichtung
             Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -128,6 +130,7 @@ fun HomeScreen(
                     fontSize = 10.sp
                 )
             }
+
             // HIER WIEDER HINZUFÜGEN:
             // Der Marker wird nun mittig über der Karte platziert
             Box(
