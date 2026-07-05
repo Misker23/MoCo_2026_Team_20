@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -194,19 +193,6 @@ fun HomeScreen(
                     fontSize = 10.sp
                 )
             }
-
-            // HIER WIEDER HINZUFÜGEN:
-            // Der Marker wird nun mittig über der Karte platziert
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(), // Füllt den Bereich der Box aus
-                contentAlignment = Alignment.Center // Zentriert den Inhalt
-            ) {
-                SmallMarker(
-                    onExpandRequested = { isMarkerWindowVisable = true }
-                )
-            }
-        }
 
         // 3. Popups/Fenster (erscheinen über allem)
         if (isMarkerWindowVisable) {
