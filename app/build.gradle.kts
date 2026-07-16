@@ -63,9 +63,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.navigation:navigation-compose:2.9.8")
-    implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.maplibre.compose)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // CameraX
     val camerax_version = "1.4.1"
