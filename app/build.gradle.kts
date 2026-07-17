@@ -61,17 +61,17 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.maplibre.compose)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v282)
+    implementation(libs.play.services.location)
 
     // CameraX
     val camerax_version = "1.4.1"
-    implementation("androidx.camera:camera-core:${camerax_version}")
-    implementation("androidx.camera:camera-camera2:${camerax_version}")
-    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
-    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 }
