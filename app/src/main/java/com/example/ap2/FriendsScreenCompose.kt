@@ -17,7 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ap2.FriendsScreenComposables.AddFriendButton
 import com.example.ap2.FriendsScreenComposables.FriendBox
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.ap2.FriendsViewModel
+import com.example.ap2.viewmodels.FriendsViewModel
 @Composable
 fun FriendsScreen(
     viewModel: FriendsViewModel = viewModel(), // ViewModel injizieren

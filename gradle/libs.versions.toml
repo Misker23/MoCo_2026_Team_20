@@ -1,5 +1,6 @@
 [versions]
-agp = "9.2.1"
+agp = "9.3.0"
+cameraCore = "1.4.1"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -9,10 +10,21 @@ activityCompose = "1.8.0"
 kotlin = "2.2.10"
 kotlinxSerializationJson = "1.11.0"
 composeBom = "2026.02.01"
+lifecycleViewmodelCompose = "2.11.0"
+lifecycleViewmodelComposeVersion = "2.8.2"
+navigationCompose = "2.9.8"
+playServicesLocation = "21.4.0"
 ui = "1.11.2"
 
 [libraries]
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+androidx-lifecycle-viewmodel-compose-v282 = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelComposeVersion" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -32,6 +44,7 @@ androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name =
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version = "0.13.0" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

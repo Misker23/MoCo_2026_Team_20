@@ -8,7 +8,11 @@ plugins {
 
 android {
     namespace = "com.example.ap2"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.ap2"
@@ -57,8 +61,17 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.navigation:navigation-compose:2.9.8")
-    implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.maplibre.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v282)
+    implementation(libs.play.services.location)
+
+    // CameraX
+    val camerax_version = "1.4.1"
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 }
