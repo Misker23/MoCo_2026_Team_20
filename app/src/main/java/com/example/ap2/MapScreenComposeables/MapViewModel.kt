@@ -95,16 +95,17 @@ class MapViewModel : ViewModel() {
     fun fetchMarkers() {
         viewModelScope.launch {
             try {
-                // WICHTIG: Hier muss .rpc stehen, nicht .select()!
-                val response = supabase.postgrest.rpc("get_markers_with_coords")
+                // WICHTIG: Wir nutzen jetzt .select() auf die Tabelle, nicht mehr .rpc()
+                val response = supabase.postgrest["markers"]
+                    .select()
                     .decodeList<MarkerDto>()
 
                 markerList.clear()
                 markerList.addAll(response)
 
-                response.forEach { println("DEBUG: Marker nach RPC: Lat=${it.lat}, Lon=${it.lon}") }
+                response.forEach { println("DEBUG: Marker geladen: Lat=${it.lat}, Lon=${it.lon}") }
             } catch (e: Exception) {
-                println("DEBUG: Fehler: ${e.message}")
+                println("DEBUG: Fehler beim Laden der Marker: ${e.message}")
             }
         }
     }
