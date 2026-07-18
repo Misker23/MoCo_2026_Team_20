@@ -216,7 +216,7 @@ fun MapScreen(
             }
             MapMode.CONFIRMING -> {
                 ConfirmMarkerOverlay(
-                    onConfirm = { viewModel.confirmMarker() }, // Leitet Bestätigung ans ViewModel weiter
+                    onConfirm = { viewModel.confirmMarker("Ein neu platzierter Marker!") }, // Leitet Bestätigung ans ViewModel weiter
                     onCancel = { viewModel.cancelPlacing() }, // Leitet Abbruch ans ViewModel weiter
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )

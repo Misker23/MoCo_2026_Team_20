@@ -13,17 +13,13 @@ import androidx.compose.animation.core.copy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -31,14 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ap2.HomeScreenComposables.*
-import androidx.lifecycle.viewmodel.compose.viewModel // WICHTIGER IMPORT!
-import com.example.ap2.HomeScreenComposables.FriendsButton
-import com.example.ap2.HomeScreenComposables.MarkerWindow
-import com.example.ap2.HomeScreenComposables.POIButton
-import com.example.ap2.HomeScreenComposables.POIWindow
-import com.example.ap2.HomeScreenComposables.ProfileButton
-import com.example.ap2.HomeScreenComposables.SettingButton
-import com.example.ap2.HomeScreenComposables.SettingWindow
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ap2.MapScreenComposeables.MapMode
 import com.example.ap2.MapScreenComposeables.MapScreen
 import com.example.ap2.MapScreenComposeables.MapViewModel
@@ -77,11 +66,11 @@ fun HomeScreen(
         }
     }
 
-
     var markerPosition by remember { mutableStateOf<Position?>(null) }
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
     var isPoiWindowVisable by remember { mutableStateOf(false) }
     var isSettingWindowVisable by remember { mutableStateOf(false) }
+
     //Einteilung des HomeScreens in mehrere Sektionen (Hauptcontent, Bottom Navigation Bar)
     Scaffold(
         //Bottom Navigation Bar ohne buttons
@@ -151,13 +140,6 @@ fun HomeScreen(
                 )
             }
 
-
-            if (isMarkerWindowVisable) {
-                MarkerWindow(
-                    bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                    onDismiss = { isMarkerWindowVisable = false }
-                )
-            }
             //Kompass und Schritte und Handyausrichtung
             if (viewModel.currentMode == MapMode.DEFAULT) {
                 Column(
@@ -182,7 +164,7 @@ fun HomeScreen(
 
                     // Kompass-Icon
                     Icon(
-                        painter = painterResource(id = R.drawable.baseline_place_24), // Beispiel-Icon
+                        painter = painterResource(id = R.drawable.baseline_place_24),
                         contentDescription = "Kompass",
                         tint = Color.Red,
                         modifier = Modifier
@@ -199,14 +181,16 @@ fun HomeScreen(
                 }
             }
 
-
-        // 3. Popups/Fenster (erscheinen über allem)
-        if (isMarkerWindowVisable) {
-            MarkerWindow(
-                bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                onDismiss = { isMarkerWindowVisable = false }
-            )
-        }
+            // 3. Popups/Fenster (erscheinen über allem - ganz am Ende der Box platziert)
+            if (isMarkerWindowVisable) {
+                MarkerWindow(
+                    bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                    onDismiss = { isMarkerWindowVisable = false },
+                    onSave = { descriptionText ->
+                        viewModel.confirmMarker(descriptionText)
+                    }
+                )
+            }
 
             if (isPoiWindowVisable) {
                 POIWindow(

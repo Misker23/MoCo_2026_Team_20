@@ -12,6 +12,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ap2.ui.theme.MoCo_2026Theme
+import androidx.lifecycle.lifecycleScope // Import für die Coroutine
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.gotrue.providers.builtin.Email // Import für den Email-Login
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -39,6 +43,18 @@ class MainActivity : ComponentActivity() {
         requestLocationPermission()
 
         enableEdgeToEdge()
+        //Login Logik
+        lifecycleScope.launch {
+            try {
+                supabase.auth.signInWith(Email) {
+                    email = "test@example.com"
+                    password = "password123"
+                }
+                println("DEBUG: Login erfolgreich!")
+            } catch (e: Exception) {
+                println("DEBUG: Login FEHLGESCHLAGEN: ${e.message}")
+            }
+        }
 
         setContent {
             MoCo_2026Theme {

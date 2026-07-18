@@ -19,23 +19,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun MarkerWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
-    //State Remember für die Beschreibung, damit das was im Feld eingegeben wird auch zwischengespeichert wird
+fun MarkerWindow(
+    bottomPadding: Dp,
+    onDismiss: () -> Unit,
+    //State Remember für die Beschreibung, damit das was im Feld eingegeben wird auch zwischengespeichert
+    onSave: (String) -> Unit
+) {
     var description by remember { mutableStateOf("") }
-    //Popup Fenster für OpenedMarker
+    //Pop-up-Fenster für OpenedMarker
     Popup(
         //damit es unten und mittig öffnet
         alignment = Alignment.BottomCenter,
         //damit das Fenster auch geschlossen werden kann
         onDismissRequest = onDismiss,
-        //damit aus dem Fenster klicken das Popup Fenster schließt
+        //damit aus dem Fenster klicken das Pop-up-Fenster schließt
         properties = PopupProperties(focusable = true)
     ) {
         //Um mehrere Dinge untereinander anzuzeigen und zu formatieren
@@ -63,14 +66,13 @@ fun MarkerWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            //Button zum schließen des Screens, da es ein größeres Window ist
-            Button(onClick = onDismiss) { Text("Close") }
+            //Button zum Schließen des Screens, da es ein größeres Window ist
+            Button(onClick = {
+                onSave(description) //Textfeld-Inhalt übergeben
+                onDismiss() //Fenster schließen
+            }) {
+                Text("Speichern")
+            }
         }
     }
-}
-
-@Preview
-@Composable
-fun MarkerWindowPreview() {
-    MarkerWindow(bottomPadding = 0.dp, onDismiss = {})
 }
