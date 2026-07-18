@@ -62,6 +62,7 @@ fun MapScreen(
 
 
 
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var isInitialLocationSet by remember { mutableStateOf(false) }
@@ -127,68 +128,78 @@ fun MapScreen(
             }
         }
 
-        // Karte rendern
-        MaplibreMap(
-            modifier = Modifier.fillMaxSize(),
-            baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
-            cameraState = camera,
-            onMapClick = { pos, _ ->
-                viewModel.handleMapClick(pos)
-                onMapClick(pos)
-                ClickResult.Consume
-            },
-            options = MapOptions(
-                gestureOptions = GestureOptions(
-                    isTiltEnabled = false,
-                    isZoomEnabled = true,
-                    isRotateEnabled = true,
-                    isScrollEnabled = true
-                ),
-                ornamentOptions = OrnamentOptions(
-                    isCompassEnabled = true,
-                    compassAlignment = Alignment.TopEnd,
-                    isScaleBarEnabled = true,
-                    scaleBarAlignment = Alignment.TopStart
+        LaunchedEffect(Unit) {
+            viewModel.fetchMarkers()
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Karte rendern
+            MaplibreMap(
+                modifier = Modifier.fillMaxSize(),
+                baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
+                cameraState = camera,
+                onMapClick = { pos, _ ->
+                    viewModel.handleMapClick(pos)
+                    onMapClick(pos)
+                    ClickResult.Consume
+                },
+                options = MapOptions(
+                    gestureOptions = GestureOptions(
+                        isTiltEnabled = false,
+                        isZoomEnabled = true,
+                        isRotateEnabled = true,
+                        isScrollEnabled = true
+                    ),
+                    ornamentOptions = OrnamentOptions(
+                        isCompassEnabled = true,
+                        compassAlignment = Alignment.TopEnd,
+                        isScaleBarEnabled = true,
+                        scaleBarAlignment = Alignment.TopStart
+                    )
                 )
-            )
-        ) {
+            ) {
 
-            if (hasLocationPermission) {
-                val locationProvider = rememberDefaultLocationProvider()
-                val orientationProvider = rememberDefaultOrientationProvider()
+                if (hasLocationPermission) {
+                    val locationProvider = rememberDefaultLocationProvider()
+                    val orientationProvider = rememberDefaultOrientationProvider()
 
-                val locationState =
-                    rememberUserLocationState(
-                        locationProvider,
-                        orientationProvider
+                    val locationState =
+                        rememberUserLocationState(
+                            locationProvider,
+                            orientationProvider
+                        )
+
+                    LocationPuck(
+                        idPrefix = "user",
+                        location = locationState.location,
+                        bearing = locationState.mostAccurateBearing(),
+                        cameraState = camera
                     )
 
-                LocationPuck(
-                    idPrefix = "user",
-                    location = locationState.location,
-                    bearing = locationState.mostAccurateBearing(),
-                    cameraState = camera
-                )
-
-                LocationTrackingEffect(
-                    locationState = locationState
-                ) {
-                    // Ongoing location tracking logic can go here if needed
+                    LocationTrackingEffect(
+                        locationState = locationState
+                    ) {
+                        // Ongoing location tracking logic can go here if needed
+                    }
                 }
-            }
 
+            }
         }
 
         // Kamera-State
         val currentCameraState = camera.position
 
         // gespeicherte Marker setzen
-        viewModel.savedMarkers.forEach { savedPos ->
-            val screenPos = camera.projection?.screenLocationFromPosition(savedPos)
+        viewModel.markerList.forEach { markerDto ->
+            // Wenn dein DTO 'lat' und 'lon' hat:
+            val markerPos = Position(markerDto.lon, markerDto.lat)
+
+            val screenPos = camera.projection?.screenLocationFromPosition(markerPos)
             if (screenPos != null) {
                 Box(modifier = Modifier.offset(x = screenPos.x - 24.dp, y = screenPos.y - 24.dp)) {
                     SmallMarker(onExpandRequested = {
-                        onMarkerClick() // Öffnet das Fenster aus dem HomeScreen
+                        viewModel.selectMarker(markerDto) // Marker fürs Update wählen
+                        onMarkerClick() // Dialog öffnen
                     })
                 }
             }
