@@ -1,0 +1,42 @@
+project_id = "MoCo_2026_Team_20"
+
+[api]
+port = 8000
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+port = 8001
+
+# Hier verweist du auf deine Umgebungsvariable aus der .env.bak Datei
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[auth]
+site_url = "http://localhost:3000"
+# Stelle sicher, dass diese Redirects mit deiner App-Logik übereinstimmen
+additional_redirect_urls = [
+    "http://localhost:3000/*"
+]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+# Wenn du OAuth Provider nutzt, verweise auch hier auf die Variablen
+# [auth.external.github]
+# enabled = true
+# client_id = "env(GITHUB_CLIENT_ID)"
+# secret = "env(GITHUB_SECRET)"
+
+[functions.search-embeddings]
+verify_jwt = false
+
+[analytics]
+enabled = false
