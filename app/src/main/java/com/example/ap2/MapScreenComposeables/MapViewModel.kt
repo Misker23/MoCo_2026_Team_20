@@ -1,5 +1,6 @@
 package com.example.ap2.MapScreenComposeables
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -7,9 +8,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ap2.MarkerDto
-import com.example.ap2.supabase // Deinen globalen Client importieren
+import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -29,6 +32,10 @@ class MapViewModel : ViewModel() {
 
     val savedMarkers = mutableStateListOf<Position>()
     val userPosition = Position(latitude = 51.023215, longitude = 7.56198)
+    val markerList = mutableStateListOf<MarkerDto>()
+
+    var selectedMarker by mutableStateOf<MarkerDto?>(null)
+        private set
 
     fun startPlacingMode() {
         currentMode = MapMode.PLACING_MARKER
@@ -41,7 +48,6 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // NEU: Nimmt die Beschreibung aus der UI entgegen und speichert in Supabase
     fun confirmMarker(description: String) {
         val pos = temporaryPosition ?: return
         val user = supabase.auth.currentUserOrNull()
@@ -59,7 +65,6 @@ class MapViewModel : ViewModel() {
                         put("user_id", user?.id)
                     }
                 )
-                // Lade die Liste neu, damit der neue Marker inklusive ID (für Update) vorhanden ist
                 fetchMarkers()
             } catch (e: Exception) {
                 println("DEBUG: FEHLER beim RPC: ${e.message}")
@@ -69,49 +74,51 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    //Funktion zum Verändern der Inhalte des Markers
-    fun updateMarker(marker: MarkerDto) {
+    suspend fun fetchMarkers() {
+        try {
+            val list = supabase.postgrest.from("markers")
+                .select()
+                .decodeList<MarkerDto>()
+
+            markerList.clear()
+            markerList.addAll(list)
+            Log.d("DB", "Marker erfolgreich geladen: ${list.size}")
+        } catch (e: Exception) {
+            Log.e("DB", "Fehler beim Laden der Marker: ${e.message}")
+        }
+    }
+
+    // JETZT KORREKT INNERHALB DER KLASSE PLATZIERT:
+    fun updateMarkerWithImage(id: String, newDescription: String, newColor: String, oldImageUrl: String, newImageBytes: ByteArray?) {
         viewModelScope.launch {
             try {
-                if (marker.id == null) return@launch
+                var finalImageUrl = oldImageUrl
 
-                supabase.postgrest["markers"]
-                    .update({
-                        set("description", marker.description)
-                        set("image_url", marker.image_url)
-                    }) {
-                        filter { eq("id", marker.id) }
+                if (newImageBytes != null) {
+                    val uploadedUrl = uploadMarkerImageAndGetUrl(id, newImageBytes)
+                    if (uploadedUrl != null) {
+                        finalImageUrl = uploadedUrl
                     }
-                println("DEBUG: Marker ${marker.id} erfolgreich aktualisiert!")
+                }
+
+                supabase.postgrest.from("markers")
+                    .update({
+                        set("description", newDescription)
+                        set("color", newColor)
+                        set("image_url", finalImageUrl)
+                    }) {
+                        filter { eq("id", id) }
+                    }
+
+                println("DEBUG: Marker $id erfolgreich aktualisiert!")
+                fetchMarkers()
+                selectedMarker = null
+
             } catch (e: Exception) {
-                println("DEBUG: Fehler beim Update: ${e.message}")
+                println("DEBUG: Fehler beim kombinierten Update: ${e.message}")
             }
         }
     }
-
-    //Funktion um bestehende Marker in der Datenbank zu laden
-    val markerList = mutableStateListOf<MarkerDto>()
-
-    fun fetchMarkers() {
-        viewModelScope.launch {
-            try {
-                // WICHTIG: Wir nutzen jetzt .select() auf die Tabelle, nicht mehr .rpc()
-                val response = supabase.postgrest["markers"]
-                    .select()
-                    .decodeList<MarkerDto>()
-
-                markerList.clear()
-                markerList.addAll(response)
-
-                response.forEach { println("DEBUG: Marker geladen: Lat=${it.lat}, Lon=${it.lon}") }
-            } catch (e: Exception) {
-                println("DEBUG: Fehler beim Laden der Marker: ${e.message}")
-            }
-        }
-    }
-
-    //Funktion um den Aktuell gesetzten Marker auszuwählen
-    var selectedMarker by mutableStateOf<MarkerDto?>(null)
 
     fun selectMarker(marker: MarkerDto) {
         selectedMarker = marker
@@ -121,8 +128,36 @@ class MapViewModel : ViewModel() {
         resetToDefault()
     }
 
+    fun deleteMarker(id: String) {
+        viewModelScope.launch {
+            try {
+                supabase.postgrest.from("markers")
+                    .delete {
+                        filter { eq("id", id) }
+                    }
+
+                println("DEBUG: Marker $id erfolgreich gelöscht!")
+                fetchMarkers() // Aktualisiert die Karte live
+                selectedMarker = null // Zurücksetzen
+            } catch (e: Exception) {
+                println("DEBUG: Fehler beim Löschen des Markers: ${e.message}")
+            }
+        }
+    }
+
     private fun resetToDefault() {
         temporaryPosition = null
         currentMode = MapMode.DEFAULT
+    }
+
+    suspend fun uploadMarkerImageAndGetUrl(markerId: String, imageBytes: ByteArray): String? {
+        return try {
+            val storagePath = "markers/$markerId.jpg"
+            supabase.storage["marker-images"].upload(storagePath, imageBytes, upsert = true)
+            supabase.storage["marker-images"].publicUrl(storagePath)
+        } catch (e: Exception) {
+            Log.e("Storage", "Bild-Upload fehlgeschlagen: ${e.message}")
+            null
+        }
     }
 }

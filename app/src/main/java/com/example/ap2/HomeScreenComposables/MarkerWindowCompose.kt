@@ -1,78 +1,188 @@
 package com.example.ap2.HomeScreenComposables
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog // NEU
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults // NEU
+import androidx.compose.material3.OutlinedButton // NEU
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import coil.compose.AsyncImage
+import com.example.ap2.MarkerDto
 
 @Composable
 fun MarkerWindow(
     bottomPadding: Dp,
+    markerDto: MarkerDto?,
     onDismiss: () -> Unit,
-    //State Remember für die Beschreibung, damit das was im Feld eingegeben wird auch zwischengespeichert
-    onSave: (String) -> Unit
+    onSave: (String, String, ByteArray?) -> Unit,
+    onDelete: () -> Unit // NEU: Callback fürs Löschen
 ) {
-    var description by remember { mutableStateOf("") }
-    //Pop-up-Fenster für OpenedMarker
+    val context = LocalContext.current
+    var description by remember(markerDto) { mutableStateOf(markerDto?.description ?: "") }
+    var selectedColor by remember(markerDto) { mutableStateOf(markerDto?.color ?: "#E91E63") }
+    var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+    // NEU: State für die Sichtbarkeit der Sicherheitsabfrage
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    val previewBitmap = remember(selectedImageBytes) {
+        selectedImageBytes?.let {
+            BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try { selectedImageBytes = context.contentResolver.openInputStream(it)?.readBytes() }
+            catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
     Popup(
-        //damit es unten und mittig öffnet
         alignment = Alignment.BottomCenter,
-        //damit das Fenster auch geschlossen werden kann
         onDismissRequest = onDismiss,
-        //damit aus dem Fenster klicken das Pop-up-Fenster schließt
         properties = PopupProperties(focusable = true)
     ) {
-        //Um mehrere Dinge untereinander anzuzeigen und zu formatieren
         Column(
             modifier = Modifier
-                //damit das Fenster nicht über der Bottombar öffnet
                 .padding(bottom = bottomPadding)
-                .size(350.dp, 750.dp)
-                //durchsichtiger Hintergrund, Bild, Beschreibung und Button sind nicht Durchsichtig
-                .background(Color.LightGray.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
+                .size(350.dp, 650.dp)
+                .background(Color.LightGray.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            //verticales spacing zwischen den Items im Column
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            //Bild ersatz
-            Box(Modifier
-                .size(250.dp, 250.dp)
-                .background(Color.Black))
-            //Textfeld, um die Beschreibung einzugeben, behält die Beschreibung noch nicht und gibt sie nicht weiter an SneakPeekMarker
-            TextField(
-                //was bisher im Textfeld steht
-                value = description,
-                //wenn was geändert wird, wird das im Textfeld angepasst
-                onValueChange = { description = it },
-                modifier = Modifier.fillMaxWidth()
+            // Bild-Bereich
+            Box(
+                modifier = Modifier
+                    .size(220.dp, 220.dp)
+                    .background(Color.Black, RoundedCornerShape(8.dp))
+                    .clickable { galleryLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    previewBitmap != null -> {
+                        Image(bitmap = previewBitmap, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    }
+                    !markerDto?.image_url.isNullOrEmpty() -> {
+                        AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    }
+                    else -> { Text("Bild hinzufügen (Klicken)", color = Color.Gray) }
+                }
+            }
+
+            val extendedColorPalette = listOf(
+                "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3",
+                "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A",
+                "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722",
+                "#795548", "#9E9E9E", "#607D8B"
             )
-            //Button zum Schließen des Screens, da es ein größeres Window ist
-            Button(onClick = {
-                onSave(description) //Textfeld-Inhalt übergeben
-                onDismiss() //Fenster schließen
-            }) {
-                Text("Speichern")
+
+            Text("Marker-Farbe wählen:")
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                items(extendedColorPalette) { hexColor ->
+                    val composeColor = Color(android.graphics.Color.parseColor(hexColor))
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(composeColor, CircleShape)
+                            .border(
+                                width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
+                                color = Color.Black,
+                                shape = CircleShape
+                            )
+                            .clickable { selectedColor = hexColor }
+                    )
+                }
+            }
+
+            TextField(
+                value = description,
+                onValueChange = { description = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Beschreibung") }
+            )
+
+            // Button-Reihe untereinander
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    onClick = {
+                        onSave(description, selectedColor, selectedImageBytes)
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Änderungen speichern")
+                }
+
+                // NEU: Löschen Button im gleichen Format (Rot eingefärbt zur Verdeutlichung)
+                Button(
+                    onClick = { showDeleteConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Marker löschen", color = Color.White)
+                }
             }
         }
+    }
+
+    // NEU: Die zusätzliche Sicherheitsabfrage als AlertDialog
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Marker löschen?") },
+            text = { Text("Bist du dir sicher, dass du diesen Marker dauerhaft aus der Datenbank entfernen möchtest?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onDelete() // Führt Löschvorgang aus
+                        onDismiss() // Schließt das Marker-Fenster
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }

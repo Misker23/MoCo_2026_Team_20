@@ -181,13 +181,28 @@ fun HomeScreen(
                 }
             }
 
-            // 3. Popups/Fenster (erscheinen über allem - ganz am Ende der Box platziert)
+            // 3. Popups/Fenster
+            // 3. Popups/Fenster
             if (isMarkerWindowVisable) {
                 MarkerWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
+                    markerDto = viewModel.selectedMarker,
                     onDismiss = { isMarkerWindowVisable = false },
-                    onSave = { descriptionText ->
-                        viewModel.confirmMarker(descriptionText)
+                    onSave = { updatedDescription, updatedColor, newImageBytes ->
+                        viewModel.selectedMarker?.let { currentMarker ->
+                            viewModel.updateMarkerWithImage(
+                                id = currentMarker.id ?: "",
+                                newDescription = updatedDescription,
+                                newColor = updatedColor,
+                                oldImageUrl = currentMarker.image_url ?: "",
+                                newImageBytes = newImageBytes
+                            )
+                        }
+                    },
+                    onDelete = { // NEU: Löschfunktion mit ID füttern
+                        viewModel.selectedMarker?.let { currentMarker ->
+                            viewModel.deleteMarker(currentMarker.id ?: "")
+                        }
                     }
                 )
             }

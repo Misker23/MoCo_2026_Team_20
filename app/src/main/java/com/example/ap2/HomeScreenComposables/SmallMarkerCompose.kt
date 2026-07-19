@@ -3,6 +3,7 @@ package com.example.ap2.HomeScreenComposables
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -13,50 +14,55 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ap2.MarkerDto
 import com.example.ap2.R
 
 @Composable
-fun SmallMarker(onExpandRequested: () -> Unit) {
-    //State Remember für SneakPeekMarker, ob dieser angezeigt wird oder nicht
+fun SmallMarker(markerDto: MarkerDto, onExpandRequested: () -> Unit) {
     var isSneakPeekVisible by remember { mutableStateOf(false) }
 
-    //box damit der Marker in der Mitte ist
+//Farbe für Marker bestimmen
+    val markerColor = remember(markerDto.color) {
+        try {
+            val dbColor = markerDto.color ?: "#FF0000" //Standard Rot als Hex, falls leer
+            //Prüfen, ob ein '#' fehlt (falls reiner Hex-Wert ohne Raute in der DB steht)
+            val formattedColor = if (dbColor.startsWith("#") || dbColor.lowercase() in listOf("red", "blue", "green", "yellow", "purple", "black", "white")) {
+                dbColor
+            } else {
+                "#$dbColor"
+            }
+            //Konvertiert den String sicher in eine Compose-Farbe
+            Color(android.graphics.Color.parseColor(formattedColor))
+        } catch (e: Exception) {
+            Color.Red //Sicherer Fallback bei Tippfehlern in der DB
+        }
+    }
 
-    Box() {
-        //damit der Button nur das Icon ist
+    Box {
         Icon(
-            //woher das Icon kommt
             painter = painterResource(R.drawable.baseline_place_24),
             contentDescription = null,
-            //Farbänderung des Icons
-            tint = Color.Red,
-            //Vergrößerung des Icons und macht das Icon clickable
+            tint = markerColor, // JETZT DYNAMISCH
             modifier = Modifier
                 .size(48.dp)
                 .clickable(
-                    //damit kein graußes Quadrat im Hintergrund ist
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                    // zeigt den SneakPeekMarker an
-                ) { isSneakPeekVisible = true },
+                ) { isSneakPeekVisible = !isSneakPeekVisible },
         )
 
         if (isSneakPeekVisible) {
-            SneakPeekMarker(
-                onDismiss = { isSneakPeekVisible = false },
-                onExpand = {
-                    onExpandRequested()
-                    isSneakPeekVisible = false // Close small when opening big
-                }
-            )
+            Box(modifier = Modifier.offset(x = (-76).dp, y = (-128).dp)) {
+                SneakPeekMarker(
+                    markerDto = markerDto,
+                    onDismiss = { isSneakPeekVisible = false },
+                    onExpand = {
+                        onExpandRequested()
+                        isSneakPeekVisible = false
+                    }
+                )
+            }
         }
     }
-}
-
-@Preview
-@Composable
-fun SmallMarkerPreview() {
-    SmallMarker(onExpandRequested = {})
 }

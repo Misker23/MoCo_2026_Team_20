@@ -40,6 +40,7 @@ import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.Position
 import com.example.ap2.HomeScreenComposables.SmallMarker
+import com.example.ap2.MarkerDto
 import org.maplibre.compose.location.LocationPuck
 import org.maplibre.compose.location.LocationTrackingEffect
 import org.maplibre.compose.location.mostAccurateBearing
@@ -191,16 +192,18 @@ fun MapScreen(
 
         // gespeicherte Marker setzen
         viewModel.markerList.forEach { markerDto ->
-            // Wenn dein DTO 'lat' und 'lon' hat:
             val markerPos = Position(markerDto.lon, markerDto.lat)
 
             val screenPos = camera.projection?.screenLocationFromPosition(markerPos)
             if (screenPos != null) {
                 Box(modifier = Modifier.offset(x = screenPos.x - 24.dp, y = screenPos.y - 24.dp)) {
-                    SmallMarker(onExpandRequested = {
-                        viewModel.selectMarker(markerDto) // Marker fürs Update wählen
-                        onMarkerClick() // Dialog öffnen
-                    })
+                    SmallMarker(
+                        markerDto = markerDto, // NEU: Daten übergeben
+                        onExpandRequested = {
+                            viewModel.selectMarker(markerDto) // Marker fürs Update wählen
+                            onMarkerClick() // Dialog öffnen
+                        }
+                    )
                 }
             }
         }
@@ -211,7 +214,10 @@ fun MapScreen(
                 val screenPos = camera.projection?.screenLocationFromPosition(tempPos)
                 if (screenPos != null) {
                     Box(modifier = Modifier.offset(x = screenPos.x - 24.dp, y = screenPos.y - 24.dp)) {
-                        SmallMarker(onExpandRequested = {})
+                        SmallMarker(
+                            markerDto = MarkerDto(lat = tempPos.latitude, lon = tempPos.longitude),
+                            onExpandRequested = {}
+                        )
                     }
                 }
             }
