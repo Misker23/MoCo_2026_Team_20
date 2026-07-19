@@ -1,66 +1,99 @@
 package com.example.ap2.HomeScreenComposables
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.AsyncImage // Wichtig für Bilder[cite: 1]
 import com.example.ap2.MarkerDto
 
 @Composable
-fun SneakPeekMarker(markerDto: MarkerDto, onDismiss: () -> Unit, onExpand: () -> Unit) {
-    //Die Box ist jetzt das direkte UI-Element.
-    Box(
-        modifier = Modifier
-            .size(200.dp, 120.dp)
-            .background(Color.LightGray, RoundedCornerShape(8.dp))
-            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-            .clickable { onExpand() } // Klick leitet sauber weiter!
-            .padding(4.dp),
-        contentAlignment = Alignment.Center
+fun SneakPeekMarkerCompose(
+    markerDto: MarkerDto,
+    userPosition: org.maplibre.spatialk.geojson.Position,
+    onExpandRequested: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val markerColor = remember(markerDto.color) {
+        try {
+            Color(android.graphics.Color.parseColor(markerDto.color ?: "#E91E63"))
+        } catch (e: Exception) {
+            Color.Red
+        }
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onExpandRequested() },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A).copy(alpha = 0.96f)),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier.height(100.dp), // Feste Höhe für die Vorschau
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Bild-Vorschau
             Box(
                 modifier = Modifier
-                    .size(120.dp, 60.dp)
-                    .background(Color.Black),
-                contentAlignment = Alignment.Center
+                    .fillMaxHeight()
+                    .width(100.dp)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Gray)
             ) {
                 if (!markerDto.image_url.isNullOrEmpty()) {
                     AsyncImage(
                         model = markerDto.image_url,
-                        contentDescription = null,
+                        contentDescription = "Marker Bild",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray))
+                    // Fallback, falls kein Bild da ist
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Kein Bild", color = Color.White, fontSize = 10.sp)
+                    }
                 }
             }
 
-            Text(
-                text = markerDto.description ?: "Keine Beschreibung",
-                modifier = Modifier.padding(vertical = 4.dp),
-                fontSize = 12.sp,
-                maxLines = 1
-            )
+            // Text-Informationen
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = markerDto.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Titel",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Tippen für Details...",
+                    color = markerColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }

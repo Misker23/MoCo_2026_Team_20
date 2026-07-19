@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.animation.core.copy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ap2.HomeScreenComposables.*
@@ -34,12 +32,22 @@ import com.example.ap2.MapScreenComposeables.MapViewModel
 import org.maplibre.spatialk.geojson.Position
 import com.example.ap2.sensors.MotionRepository
 import kotlinx.coroutines.launch
+import io.github.jan.supabase.gotrue.auth
 
 @Composable
 fun HomeScreen(
     viewModel: MapViewModel = viewModel(),
     onNavigateToFriends: () -> Unit
 ) {
+    var isSneakPeekVisible by remember { mutableStateOf(false) }
+
+    val camera = org.maplibre.compose.camera.rememberCameraState(
+        firstPosition = org.maplibre.compose.camera.CameraPosition(
+            target = viewModel.userPosition,
+            zoom = 16.5,
+        )
+    )
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val context = LocalContext.current
 
     // 1. Initialisierung des Repositories
@@ -124,11 +132,16 @@ fun HomeScreen(
             // Leitet das geteilte ViewModel an den MapScreen weiter
             MapScreen(
                 viewModel = viewModel,
+                camera = camera,
                 onMapClick = { pos ->
                     markerPosition = pos
+                    // HIER die Änderungen, damit alles beim Klick verschwindet:
+                    isSneakPeekVisible = false
+                    isMarkerWindowVisable = false
                 },
                 onMarkerClick = {
-                    isMarkerWindowVisable = true
+                    // Beim Klick auf den Marker zeigen wir den SneakPeek
+                    isSneakPeekVisible = true
                 }
             )
 
@@ -181,12 +194,30 @@ fun HomeScreen(
                 }
             }
 
+            if (isSneakPeekVisible && viewModel.selectedMarker != null) {
+                SneakPeekMarkerCompose(
+                    markerDto = viewModel.selectedMarker!!,
+                    userPosition = viewModel.userPosition,
+                    onExpandRequested = {
+                        isSneakPeekVisible = false // Vorschau schließen
+                        isMarkerWindowVisable = true // Volles Fenster öffnen
+                    },
+                    // Positionierung über der BottomBar
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = contentPadding.calculateBottomPadding() + 10.dp)
+                )
+            }
+
             // 3. Popups/Fenster
             if (isMarkerWindowVisable) {
                 MarkerWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
                     markerDto = viewModel.selectedMarker,
-                    onDismiss = { isMarkerWindowVisable = false },
+                    onDismiss = {
+                        isMarkerWindowVisable = false
+                        isSneakPeekVisible = false // Sicherstellen, dass auch die Vorschau geschlossen wird
+                    },
                     onSave = { updatedDescription, updatedColor, newImageBytes ->
                         viewModel.selectedMarker?.let { currentMarker ->
                             viewModel.updateMarkerWithImage(
@@ -198,7 +229,7 @@ fun HomeScreen(
                             )
                         }
                     },
-                    onDelete = { // NEU: Löschfunktion mit ID füttern
+                    onDelete = {
                         viewModel.selectedMarker?.let { currentMarker ->
                             viewModel.deleteMarker(currentMarker.id ?: "")
                         }
@@ -206,10 +237,32 @@ fun HomeScreen(
                 )
             }
 
+            // 3. Beim POIWindow-Klick die weiche Animation ausführen:
             if (isPoiWindowVisable) {
                 POIWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                    onDismiss = { isPoiWindowVisable = false }
+                    markerList = viewModel.markerList,
+                    userPosition = viewModel.userPosition,
+                    currentUserId = com.example.ap2.supabase.auth.currentUserOrNull()?.id?.toString(),
+                    onDismiss = { isPoiWindowVisable = false },
+                    onPoiSelected = { selectedMarker ->
+                        viewModel.selectMarker(selectedMarker)
+
+                        val markerLat = selectedMarker.lat
+                        val markerLon = selectedMarker.lon
+
+                        if (markerLat != null && markerLon != null) {
+                            // EXAKTER AUFRUF: In der Coroutine die Kamera weich fliegen lassen
+                            coroutineScope.launch {
+                                camera.animateTo(
+                                    org.maplibre.compose.camera.CameraPosition(
+                                        target = Position(latitude = markerLat, longitude = markerLon),
+                                        zoom = 17.0 // Wunsch-Zoom nach dem Flug
+                                    )
+                                )
+                            }
+                        }
+                    }
                 )
             }
 

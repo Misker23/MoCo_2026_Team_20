@@ -32,6 +32,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
 import com.example.ap2.MarkerDto
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun MarkerWindow(
@@ -39,20 +40,21 @@ fun MarkerWindow(
     markerDto: MarkerDto?,
     onDismiss: () -> Unit,
     onSave: (String, String, ByteArray?) -> Unit,
-    onDelete: () -> Unit // NEU: Callback fürs Löschen
+    onDelete: () -> Unit
 ) {
     val context = LocalContext.current
     var description by remember(markerDto) { mutableStateOf(markerDto?.description ?: "") }
     var selectedColor by remember(markerDto) { mutableStateOf(markerDto?.color ?: "#E91E63") }
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
 
-    //State für die Sichtbarkeit der Sicherheitsabfrage
+    val currentAccentColor = remember(selectedColor) {
+        try { Color(selectedColor.toColorInt()) } catch (e: Exception) { Color(0xFFE91E63) }
+    }
+
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val previewBitmap = remember(selectedImageBytes) {
-        selectedImageBytes?.let {
-            BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
-        }
+        selectedImageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -69,11 +71,13 @@ fun MarkerWindow(
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
+        // HIER: Das Styling ist jetzt nur einmal auf der äußeren Column
         Column(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
                 .size(350.dp, 650.dp)
-                .background(Color.LightGray.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
+                .background(Color(0xFF1A1A1A).copy(alpha = 0.96f), RoundedCornerShape(24.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -81,8 +85,8 @@ fun MarkerWindow(
             // Bild-Bereich
             Box(
                 modifier = Modifier
-                    .size(220.dp, 220.dp)
-                    .background(Color.Black, RoundedCornerShape(8.dp))
+                    .size(200.dp, 200.dp) // Leicht verkleinert, damit mehr Platz für Text ist
+                    .background(Color.Black, RoundedCornerShape(12.dp))
                     .clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
@@ -93,7 +97,7 @@ fun MarkerWindow(
                     !markerDto?.image_url.isNullOrEmpty() -> {
                         AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
-                    else -> { Text("Bild hinzufügen (Klicken)", color = Color.Gray) }
+                    else -> { Text("Bild hinzufügen", color = Color.Gray) }
                 }
             }
 
@@ -104,11 +108,11 @@ fun MarkerWindow(
                 "#795548", "#9E9E9E", "#607D8B"
             )
 
-            Text("Marker-Farbe wählen:")
+            Text("Marker-Farbe wählen:", color = Color.White)
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 items(extendedColorPalette) { hexColor ->
                     val composeColor = Color(android.graphics.Color.parseColor(hexColor))
@@ -118,7 +122,7 @@ fun MarkerWindow(
                             .background(composeColor, CircleShape)
                             .border(
                                 width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
-                                color = Color.Black,
+                                color = Color.White, // Border auf Weiß geändert für Darkmode
                                 shape = CircleShape
                             )
                             .clickable { selectedColor = hexColor }
@@ -133,22 +137,23 @@ fun MarkerWindow(
                 label = { Text("Beschreibung") }
             )
 
-            // Button-Reihe untereinander
+            // Button-Reihe (Einfache Column ohne Modifiers)
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
                     onClick = {
                         onSave(description, selectedColor, selectedImageBytes)
                         onDismiss()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                 ) {
-                    Text("Änderungen speichern")
+                    Text("Änderungen speichern", color = if (selectedColor.lowercase() == "#ffeb3b") Color.Black else Color.White)
                 }
 
-                //Löschen Button im gleichen Format
                 Button(
                     onClick = { showDeleteConfirmation = true },
                     modifier = Modifier.fillMaxWidth(),
