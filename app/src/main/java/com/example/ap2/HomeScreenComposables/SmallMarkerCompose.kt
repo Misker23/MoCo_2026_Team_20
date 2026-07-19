@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.ap2.MarkerDto
 import com.example.ap2.R
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun SmallMarker(markerDto: MarkerDto, onExpandRequested: () -> Unit) {
@@ -33,7 +34,7 @@ fun SmallMarker(markerDto: MarkerDto, onExpandRequested: () -> Unit) {
                 "#$dbColor"
             }
             //Konvertiert den String sicher in eine Compose-Farbe
-            Color(android.graphics.Color.parseColor(formattedColor))
+            Color(formattedColor.toColorInt())
         } catch (e: Exception) {
             Color.Red //Sicherer Fallback bei Tippfehlern in der DB
         }

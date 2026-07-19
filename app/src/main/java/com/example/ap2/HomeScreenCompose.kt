@@ -182,7 +182,6 @@ fun HomeScreen(
             }
 
             // 3. Popups/Fenster
-            // 3. Popups/Fenster
             if (isMarkerWindowVisable) {
                 MarkerWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,

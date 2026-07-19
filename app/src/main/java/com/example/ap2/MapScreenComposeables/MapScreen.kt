@@ -61,9 +61,6 @@ fun MapScreen(
         )
     )
 
-
-
-
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var isInitialLocationSet by remember { mutableStateOf(false) }

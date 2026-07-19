@@ -88,7 +88,6 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // JETZT KORREKT INNERHALB DER KLASSE PLATZIERT:
     fun updateMarkerWithImage(id: String, newDescription: String, newColor: String, oldImageUrl: String, newImageBytes: ByteArray?) {
         viewModelScope.launch {
             try {

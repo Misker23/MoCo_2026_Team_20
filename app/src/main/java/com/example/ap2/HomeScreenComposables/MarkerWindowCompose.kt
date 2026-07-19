@@ -46,7 +46,7 @@ fun MarkerWindow(
     var selectedColor by remember(markerDto) { mutableStateOf(markerDto?.color ?: "#E91E63") }
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
 
-    // NEU: State für die Sichtbarkeit der Sicherheitsabfrage
+    //State für die Sichtbarkeit der Sicherheitsabfrage
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val previewBitmap = remember(selectedImageBytes) {
@@ -148,7 +148,7 @@ fun MarkerWindow(
                     Text("Änderungen speichern")
                 }
 
-                // NEU: Löschen Button im gleichen Format (Rot eingefärbt zur Verdeutlichung)
+                //Löschen Button im gleichen Format
                 Button(
                     onClick = { showDeleteConfirmation = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -160,7 +160,7 @@ fun MarkerWindow(
         }
     }
 
-    // NEU: Die zusätzliche Sicherheitsabfrage als AlertDialog
+    // Die zusätzliche Sicherheitsabfrage als AlertDialog
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },

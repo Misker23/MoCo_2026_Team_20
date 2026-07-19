@@ -15,6 +15,6 @@ val supabase = createSupabaseClient(
         // Zwingt den Parser, zusätzliche Datenbank-Spalten wie 'position' zu ignorieren
         serializer = KotlinXSerializer(Json { ignoreUnknownKeys = true })
     }
-    install(Auth) // WICHTIG: Das muss hier stehen!
+    install(Auth)
     install(Storage)
 }

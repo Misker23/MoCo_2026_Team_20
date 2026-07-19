@@ -23,7 +23,7 @@ import com.example.ap2.MarkerDto
 
 @Composable
 fun SneakPeekMarker(markerDto: MarkerDto, onDismiss: () -> Unit, onExpand: () -> Unit) {
-    // KEIN Popup mehr! Die Box ist jetzt das direkte UI-Element.
+    //Die Box ist jetzt das direkte UI-Element.
     Box(
         modifier = Modifier
             .size(200.dp, 120.dp)
