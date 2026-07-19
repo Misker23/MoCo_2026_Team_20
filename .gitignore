@@ -1,11 +1,21 @@
+# Android & Build-System
 *.iml
 .gradle
-/local.properties
 /.idea/
-.DS_Store
+/local.properties
 /build
 /captures
 .externalNativeBuild
 .cxx
+.DS_Store
+
+# Security (Zugangsdaten)
 .env
-local.properties
+.env.local
+.env.*.local
+.env.keys
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches
+supabase/build
