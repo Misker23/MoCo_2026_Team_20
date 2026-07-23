@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.homeScreenComposables
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage // Wichtig für Bilder[cite: 1]
-import com.example.ap2.MarkerDto
+import com.example.ap2.data_models.MarkerDto
 
 @Composable
 fun SneakPeekMarkerCompose(

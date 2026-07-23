@@ -1,80 +1,333 @@
-package com.example.ap2
+package com.example.ap2.friendsScreenComposables
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ap2.FriendsScreenComposables.AddFriendButton
-import com.example.ap2.FriendsScreenComposables.FriendBox
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.ap2.viewmodels.FriendsViewModel
+import kotlinx.coroutines.launch
+import com.example.ap2.data_models.FriendDto
+
 @Composable
-fun FriendsScreen(
-    viewModel: FriendsViewModel = viewModel(), // ViewModel injizieren
-    onNavigateBack: () -> Unit // Callback für Navigation
+fun FriendsScreenCompose(
+    viewModel: FriendsViewModel = viewModel(),
+    onNavigateBack: () -> Unit
 ) {
-    var description by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    var showAddDialog by remember { mutableStateOf(false) }
+    var friendForSharing by remember { mutableStateOf<FriendDto?>(null) }
 
-    // LiveData aus dem ViewModel als Compose-State beobachten
-    val friendsCount by viewModel.friendsCountLive.observeAsState(initial = 15)
+    LaunchedEffect(Unit) {
+        viewModel.fetchFriends()
+        viewModel.fetchMyMarkers() // Lädt eigene Marker für den Freigabe-Dialog
+    }
 
-    Scaffold(
-        topBar = {
-            Surface(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextField(
-                            value = description,
-                            onValueChange = { description = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search Friends") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // ViewModel-Aktion an den Button übergeben
-                    AddFriendButton(onClick = { viewModel.addFriend() })
-                }
-            }
-        },
-        bottomBar = {
-            Box(
+    // VOLLBILD-CONTAINER
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1A1A1A))
+            .systemBarsPadding()
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // --- HEADER MIT ZURÜCK & ADD BUTTON ---
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(4.dp),
-                contentAlignment = Alignment.Center
-            ){
-                // Callback für den Back-Stack aufrufen
-                Button(onClick = onNavigateBack) { Text("Back") }
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Zurück zum Hauptbildschirm",
+                        tint = Color.White
+                    )
+                }
+
+                Text(
+                    text = "Deine Freunde",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                IconButton(onClick = { showAddDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Freund hinzufügen",
+                        tint = Color(0xFF2196F3)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- FRIENDS LISTE / EMPTY STATE ---
+            if (viewModel.friendsList.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Du hast noch keine Freunde hinzugefügt.",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(viewModel.friendsList) { friend: FriendDto ->
+                        FriendCardItem(
+                            friend = friend,
+                            onShare = {
+                                coroutineScope.launch {
+                                    viewModel.fetchSharedMarkerIdsForFriend(friend.friend_id)
+                                    friendForSharing = friend
+                                }
+                            },
+                            onRemove = {
+                                coroutineScope.launch {
+                                    viewModel.removeFriend(friend.friend_id)
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
-    ) { contentPadding ->
-        Box(modifier = Modifier.padding(contentPadding)) {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                // Dynamische Anzahl aus dem LiveData-State verwenden
-                items(friendsCount) { i ->
-                    FriendBox()
+    }
+
+    // --- DIALOG: FREUND HINZUFÜGEN ---
+    if (showAddDialog) {
+        AddFriendDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { username, chosenColor ->
+                viewModel.addFriendByUsername(username, chosenColor)
+            }
+        )
+    }
+
+    // --- DIALOG: MARKER TEILEN (Nutzt die ShareMarkersDialog.kt Komponente) ---
+    friendForSharing?.let { friend ->
+        ShareMarkersDialog(
+            friendName = friend.displayName,
+            myMarkers = viewModel.myMarkers,
+            initialSharedIds = viewModel.currentFriendSharedMarkerIds,
+            onDismiss = { friendForSharing = null },
+            onSave = { updatedSelectedIds ->
+                coroutineScope.launch {
+                    viewModel.saveMarkerSharesForFriend(friend.friend_id, updatedSelectedIds)
+                    friendForSharing = null
+                }
+            }
+        )
+    }
+}
+
+// --- ITEM CARD FOR SINGLE FRIEND ---
+@Composable
+fun FriendCardItem(
+    friend: FriendDto,
+    onShare: () -> Unit,
+    onRemove: () -> Unit
+) {
+    val friendColor = remember(friend.color) {
+        try {
+            Color(android.graphics.Color.parseColor(friend.color ?: "#2196F3"))
+        } catch (e: Exception) {
+            Color(0xFF2196F3)
+        }
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.07f)),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Online-Indikator
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(
+                            if (friend.is_online == true) Color.Green else Color.Gray,
+                            CircleShape
+                        )
+                )
+
+                // Marker-Farbe des Freundes
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(friendColor, CircleShape)
+                )
+
+                Column {
+                    Text(
+                        text = friend.displayName,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        text = if (friend.is_online == true) "Online" else "Offline",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Teilen-Button
+                IconButton(onClick = onShare) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "Marker freigeben",
+                        tint = Color(0xFF2196F3)
+                    )
+                }
+
+                // Löschen-Button
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Entfernen",
+                        tint = Color(0xFFD32F2F)
+                    )
                 }
             }
         }
     }
 }
 
-@Preview
+// --- DIALOG: FREUND HINZUFÜGEN ---
 @Composable
-fun FriendsScreenPreview() {
-    // Ein leeres Lambda {}
-    FriendsScreen(onNavigateBack = {})
+fun AddFriendDialog(
+    onDismiss: () -> Unit,
+    onConfirm: suspend (username: String, color: String) -> String?
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var usernameInput by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf("#2196F3") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val colorPalette = listOf(
+        "#2196F3", "#E91E63", "#9C27B0", "#4CAF50",
+        "#FF9800", "#00BCD4", "#FFEB3B", "#FF5722"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Freund hinzufügen") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = usernameInput,
+                    onValueChange = {
+                        usernameInput = it
+                        errorMessage = null
+                    },
+                    label = { Text("Benutzername") },
+                    placeholder = { Text("z. B. user2") },
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMessage?.let { error ->
+                    Text(
+                        text = error,
+                        color = Color(0xFFD32F2F),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Text("Marker-Farbe wählen:", fontSize = 12.sp)
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(colorPalette) { hex ->
+                        val color = Color(android.graphics.Color.parseColor(hex))
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(color, CircleShape)
+                                .border(
+                                    width = if (selectedColor == hex) 3.dp else 0.dp,
+                                    color = Color.White,
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedColor = hex }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !isLoading,
+                onClick = {
+                    coroutineScope.launch {
+                        isLoading = true
+                        val error = onConfirm(usernameInput, selectedColor)
+                        isLoading = false
+                        if (error != null) {
+                            errorMessage = error
+                        } else {
+                            onDismiss()
+                        }
+                    }
+                }
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                } else {
+                    Text("Hinzufügen")
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
 }

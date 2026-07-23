@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.homeScreenComposables
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.ap2.MarkerDto
-import com.example.ap2.R // Stelle sicher, dass dies dein korrektes R-Package ist
 import androidx.core.graphics.toColorInt
+import com.example.ap2.R
+import com.example.ap2.data_models.MarkerDto
 
 @Composable
 fun SmallMarkerCompose(
@@ -28,11 +28,11 @@ fun SmallMarkerCompose(
     }
 
     Image(
-        painter = painterResource(id = R.drawable.baseline_place_24), // HIER Dateinamen prüfen!
+        painter = painterResource(id = R.drawable.baseline_place_24),
         contentDescription = "Marker",
-        colorFilter = ColorFilter.tint(markerColor), // Färbt das Icon dynamisch ein
+        colorFilter = ColorFilter.tint(markerColor),
         modifier = Modifier
-            .size(32.dp) // Größe des Markers
+            .size(32.dp)
             .clickable { onExpandRequested() }
     )
 }

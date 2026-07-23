@@ -1,4 +1,4 @@
-package com.example.ap2.sensors
+package com.example.ap2.sensor_repositories
 
 import android.content.Context
 import android.hardware.Sensor

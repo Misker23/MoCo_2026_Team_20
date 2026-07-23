@@ -7,15 +7,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.ap2.auth.AuthScreenCompose
 import com.example.ap2.ui.theme.MoCo_2026Theme
-import androidx.lifecycle.lifecycleScope // Import für die Coroutine
 import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.gotrue.providers.builtin.Email // Import für den Email-Login
-import kotlinx.coroutines.launch
+import com.example.ap2.homeScreenComposables.HomeScreen
+import com.example.ap2.friendsScreenComposables.FriendsScreenCompose
 
 class MainActivity : ComponentActivity() {
 
@@ -23,87 +27,78 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
-
-            val fineLocation =
-                permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-
-            val coarseLocation =
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-
+            val fineLocation = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val coarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
             if (fineLocation || coarseLocation) {
-                // Permission wurde erteilt
+                // Berechtigung erteilt
             }
         }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         requestLocationPermission()
-
         enableEdgeToEdge()
-        //Login Logik
-        lifecycleScope.launch {
-            try {
-                supabase.auth.signInWith(Email) {
-                    email = "test@example.com"
-                    password = "password123"
-                }
-                println("DEBUG: Login erfolgreich!")
-            } catch (e: Exception) {
-                println("DEBUG: Login FEHLGESCHLAGEN: ${e.message}")
-            }
-        }
 
         setContent {
             MoCo_2026Theme {
+                // Prüft beim Start, ob bereits eine aktive Supabase-Sitzung existiert
+                var isLoggedIn by remember {
+                    mutableStateOf(supabase.auth.currentUserOrNull() != null)
+                }
 
-                val navController = rememberNavController()
+                if (isLoggedIn) {
+                    // EINGELOGGT: Zeige Navigation zwischen HomeScreen und FriendsScreen
+                    val navController = rememberNavController()
 
-                NavHost(
-                    navController = navController,
-                    startDestination = HomeRoute
-                ) {
-                    composable<HomeRoute> {
-                        HomeScreen(
-                            onNavigateToFriends = {
-                                navController.navigate(FriendsRoute)
-                            }
-                        )
+                    NavHost(
+                        navController = navController,
+                        startDestination = HomeRoute
+                    ) {
+                        composable<HomeRoute> {
+                            HomeScreen(
+                                onNavigateToFriends = {
+                                    navController.navigate(FriendsRoute)
+                                },
+                                onLogout = {
+                                    isLoggedIn = false
+                                }
+                            )
+                        }
+
+                        composable<FriendsRoute> {
+                            FriendsScreenCompose(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
-
-                    composable<FriendsRoute> {
-                        FriendsScreen(
-                            onNavigateBack = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
+                } else {
+                    // NICHT EINGELOGGT: Zeige den AuthScreen für Login / Registrierung
+                    AuthScreenCompose(
+                        onAuthSuccess = {
+                            isLoggedIn = true
+                        }
+                    )
                 }
             }
         }
     }
 
-
     private fun requestLocationPermission() {
+        val fineGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
-        val fineGranted =
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-
-        val coarseGranted =
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
+        val coarseGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
         if (!fineGranted && !coarseGranted) {
-
             locationPermissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,

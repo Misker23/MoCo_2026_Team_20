@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
     implementation(libs.maplibre.compose)
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
     // CameraX
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
@@ -76,4 +77,6 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.0")
     implementation("io.github.jan-tennert.supabase:storage-kt:2.5.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 }

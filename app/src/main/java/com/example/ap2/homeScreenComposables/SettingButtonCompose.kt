@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.homeScreenComposables
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*

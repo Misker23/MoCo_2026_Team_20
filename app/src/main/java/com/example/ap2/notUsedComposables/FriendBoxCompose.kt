@@ -1,4 +1,4 @@
-package com.example.ap2.friendsScreenComposables
+package com.example.ap2.notUsedComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,7 +52,7 @@ fun FriendBox(){
         )
     }
     if (showMenu) {
-        FriendOptions(onDismiss = {showMenu = false})
+        FriendOptions(onDismiss = { showMenu = false })
     }
 }
 

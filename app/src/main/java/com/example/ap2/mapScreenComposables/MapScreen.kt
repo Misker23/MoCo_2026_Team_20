@@ -1,10 +1,16 @@
-package com.example.ap2.MapScreenComposeables
+package com.example.ap2.mapScreenComposables
 
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +30,9 @@ import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.Position
-import com.example.ap2.HomeScreenComposables.SmallMarkerCompose
+import com.example.ap2.homeScreenComposables.SmallMarkerCompose
 import com.example.ap2.data_models.MarkerDto
+import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.location.LocationPuck
 import org.maplibre.compose.location.LocationTrackingEffect
 import org.maplibre.compose.location.mostAccurateBearing
@@ -36,9 +43,9 @@ import org.maplibre.compose.location.rememberUserLocationState
 @Composable
 fun MapScreen(
     viewModel: MapViewModel,
-    camera: org.maplibre.compose.camera.CameraState,
+    camera: CameraState, // Wir nutzen durchgehend diesen Parameter!
     onMapClick: (Position) -> Unit,
-    onMarkerClick: () -> Unit
+    onMarkerClick: (MarkerDto) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -62,6 +69,20 @@ fun MapScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // Reagiert auf Klicks auf den Standort-Button und animiert die Karte über 'camera'
+    LaunchedEffect(viewModel.centerOnUserTrigger) {
+        if (viewModel.centerOnUserTrigger > 0) {
+            val targetCameraPosition = CameraPosition(
+                target = viewModel.userPosition,
+                zoom = 15.0
+            )
+            camera.animateTo(
+                finalPosition = targetCameraPosition
+            )
+        }
+    }
+
+    // EINZIGE Haupt-Box für alle Layer (Karte -> Marker -> Overlays -> Button)
     Box(modifier = Modifier.fillMaxSize().clipToBounds()) {
         if (hasLocationPermission) {
             val locationProvider = rememberDefaultLocationProvider()
@@ -80,10 +101,10 @@ fun MapScreen(
             }
 
             LaunchedEffect(Unit) {
-                viewModel.fetchMarkers()
+                viewModel.loadMarkersForMap()
             }
 
-            // --- KARTE ---
+            // 1. --- KARTE ---
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
                 baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
@@ -102,37 +123,51 @@ fun MapScreen(
                 LocationTrackingEffect(locationState = locationState) {}
             }
 
-            // --- MARKER LOGIK ---
-            // WICHTIG: Beobachtung der Kamera erzwingen, damit Marker flüssig mitziehen
-            val currentCameraPos = camera.position
-            // Fix: Store offsets as Dp instead of Float (pixels) to match DpOffset returned by camera projection
+            val currentCameraState = camera.position
+            val projection = camera.projection
+
             val markerOffsetX = 16.dp
             val markerOffsetY = 32.dp
 
             viewModel.markerList.forEach { markerDto ->
-                val markerPos = Position(markerDto.lon, markerDto.lat)
-                val screenPos = camera.projection?.screenLocationFromPosition(markerPos)
+                val lat = markerDto.lat
+                val lon = markerDto.lon
+
+                val markerPos = Position(longitude = lon, latitude = lat)
+
+                // Später für Fog of War:
+                // val isDiscovered = fogOfWarManager.isLocationRevealed(markerPos)
+                // if (isDiscovered) { ... }
+
+                // Mappt die Position dynamisch bei jeder Kamerabewegung
+                val screenPos = remember(currentCameraState, markerPos) {
+                    projection?.screenLocationFromPosition(markerPos)
+                }
 
                 if (screenPos != null) {
-                    Box(modifier = Modifier.offset {
-                        val dummy = currentCameraPos
-
-                        IntOffset(
-                            (screenPos.x - markerOffsetX).roundToPx(),
-                            (screenPos.y - markerOffsetY).roundToPx()
+                    Box(
+                        modifier = Modifier.offset {
+                            IntOffset(
+                                (screenPos.x - markerOffsetX).roundToPx(),
+                                (screenPos.y - markerOffsetY).roundToPx()
+                            )
+                        }
+                    ) {
+                        SmallMarkerCompose(
+                            markerDto = markerDto,
+                            onExpandRequested = {
+                                viewModel.selectMarker(markerDto)
+                                onMarkerClick(markerDto)
+                            }
                         )
-                    }) {
-                        SmallMarkerCompose(markerDto = markerDto, onExpandRequested = {
-                            viewModel.selectMarker(markerDto)
-                            onMarkerClick()
-                        })
                     }
                 }
             }
 
+            // Temporärer Marker bei Bestätigung
             if (viewModel.currentMode == MapMode.CONFIRMING) {
                 viewModel.temporaryPosition?.let { tempPos ->
-                    val screenPos = camera.projection?.screenLocationFromPosition(tempPos)
+                    val screenPos = projection?.screenLocationFromPosition(tempPos)
                     if (screenPos != null) {
                         Box(modifier = Modifier.offset {
                             IntOffset(
@@ -140,16 +175,44 @@ fun MapScreen(
                                 (screenPos.y - markerOffsetY).roundToPx()
                             )
                         }) {
-                            SmallMarkerCompose(markerDto = MarkerDto(lat = tempPos.latitude, lon = tempPos.longitude), onExpandRequested = {})
+                            SmallMarkerCompose(
+                                markerDto = MarkerDto(id = "", user_id = "", lat = tempPos.latitude, lon = tempPos.longitude),
+                                onExpandRequested = {}
+                            )
                         }
                     }
                 }
             }
 
+            // 3. --- OVERLAYS & HINTS ---
             when (viewModel.currentMode) {
-                MapMode.PLACING_MARKER -> PlacingModeHint(onCancel = { viewModel.cancelPlacing() }, modifier = Modifier.align(Alignment.TopCenter))
-                MapMode.CONFIRMING -> ConfirmMarkerOverlay(onConfirm = { viewModel.confirmMarker("Neuer Marker") }, onCancel = { viewModel.cancelPlacing() }, modifier = Modifier.align(Alignment.BottomCenter))
+                MapMode.PLACING_MARKER -> PlacingModeHint(
+                    onCancel = { viewModel.cancelPlacing() },
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+                MapMode.CONFIRMING -> ConfirmMarkerOverlay(
+                    onConfirm = {
+                        viewModel.confirmMarker(context = context, description = "Neuer Marker")
+                    },
+                    onCancel = { viewModel.cancelPlacing() },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
                 else -> {}
+            }
+
+            // 4. --- STANDORT BUTTON (Ganz oben auf dem Stapel) ---
+            FloatingActionButton(
+                onClick = { viewModel.centerOnUserLocation() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 96.dp, end = 16.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = "Zurück zu meiner Position"
+                )
             }
         }
     }

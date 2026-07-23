@@ -1,3 +1,0 @@
-- [ ] Update `MarkerDto` in `DatabaseModels.kt`
-- [ ] Implement `MapMode` and missing state/methods in `MapViewModel.kt`
-- [ ] Verify build with `./gradlew :app:compileDebugKotlin`

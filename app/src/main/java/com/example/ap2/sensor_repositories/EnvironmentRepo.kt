@@ -1,4 +1,4 @@
-package com.example.ap2.sensors
+package com.example.ap2.sensor_repositories
 
 
 

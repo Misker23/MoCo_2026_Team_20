@@ -1,4 +1,4 @@
-package com.example.ap2.homeScreenComposables
+package com.example.ap2.notUsedComposables
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable

@@ -9,7 +9,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ProfileButton(onLogout: () -> Unit, modifier: Modifier = Modifier) {
     var showMenu by remember { mutableStateOf(false) }
     Button(
         onClick = { showMenu = true },
@@ -22,7 +22,10 @@ fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Text(text = "Profile", textAlign = TextAlign.Center, maxLines = 1)
     }
     if (showMenu) {
-        ProfileWindow { showMenu = false }
+        ProfileWindow(
+            onDismiss = { showMenu = false },
+            onLogout = onLogout
+        )
     }
 
 }
@@ -30,5 +33,5 @@ fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 fun ProfileButtonPreview() {
-    ProfileButton(onClick = {})
+    ProfileButton(onLogout = {})
 }

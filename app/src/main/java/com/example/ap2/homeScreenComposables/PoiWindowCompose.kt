@@ -1,4 +1,4 @@
-package com.example.ap2.notUsedComposables
+package com.example.ap2.homeScreenComposables
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
@@ -45,8 +45,8 @@ fun POIWindow(
 
     val filteredMarkers = remember(selectedCategory, markerList, currentUserId) {
         when (selectedCategory) {
-            "Meine Marker" -> markerList.filter { it.creator_id == currentUserId }
-            "Von Freunden" -> markerList.filter { it.creator_id != currentUserId }
+            "Meine Marker" -> markerList.filter { it.user_id == currentUserId }
+            "Von Freunden" -> markerList.filter { it.user_id != currentUserId }
             else -> markerList
         }
     }
@@ -120,7 +120,7 @@ fun POIWindow(
                         PoiCard(
                             marker = marker,
                             userPosition = userPosition,
-                            isOwnMarker = marker.creator_id == currentUserId,
+                            isOwnMarker = marker.user_id == currentUserId,
                             onClick = {
                                 onPoiSelected(marker)
                                 onDismiss()

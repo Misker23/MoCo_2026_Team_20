@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.homeScreenComposables
 
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
-import com.example.ap2.MarkerDto
+import com.example.ap2.data_models.MarkerDto
 import androidx.core.graphics.toColorInt
 
 @Composable

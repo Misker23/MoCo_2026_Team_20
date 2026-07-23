@@ -1,4 +1,0 @@
-- [ ] Add `FriendDto` and `ProfileDto` to `DatabaseModels.kt`
-- [ ] Correct package and imports in `FriendsViewModel.kt`
-- [ ] Fix type inference and imports in `FriendsScreenCompose.kt`
-- [ ] Verify build with `./gradlew :app:compileDebugKotlin`

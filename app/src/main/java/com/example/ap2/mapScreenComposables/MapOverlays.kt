@@ -1,4 +1,4 @@
-package com.example.ap2.MapScreenComposeables
+package com.example.ap2.mapScreenComposables
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

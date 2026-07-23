@@ -1,173 +1,218 @@
-package com.example.ap2.MapScreenComposeables
+package com.example.ap2.mapScreenComposables
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope // WICHTIG: Dieser Import muss da sein!
+import androidx.lifecycle.viewModelScope
+import com.example.ap2.data_models.MapMarkerUiState
 import com.example.ap2.data_models.MarkerDto
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.maplibre.spatialk.geojson.Position
-
+import java.util.UUID
 
 enum class MapMode {
-    DEFAULT, PLACING_MARKER, CONFIRMING
+    DEFAULT,
+    PLACING_MARKER,
+    CONFIRMING
 }
 
 class MapViewModel : ViewModel() {
+
+    var userPosition by mutableStateOf(Position(longitude = 7.6261, latitude = 51.2180))
     var currentMode by mutableStateOf(MapMode.DEFAULT)
-        private set
-
-    var temporaryPosition by mutableStateOf<Position?>(null)
-        private set
-
-    val savedMarkers = mutableStateListOf<Position>()
-    var userPosition by mutableStateOf(Position(latitude = 51.023215, longitude = 7.56198))
-        private set
-    val markerList = mutableStateListOf<MarkerDto>()
     var selectedMarker by mutableStateOf<MarkerDto?>(null)
+    var temporaryPosition by mutableStateOf<Position?>(null)
+
+    val markerList = mutableStateListOf<MarkerDto>()
+    val mapMarkers = mutableStateListOf<MapMarkerUiState>()
+
+    var centerOnUserTrigger by mutableIntStateOf(0)
         private set
+
+    fun centerOnUserLocation() {
+        selectedMarker = null // Schließt optional das Marker-Detail-Sheet
+        centerOnUserTrigger++  // Löst ein Event in der UI aus
+    }
 
     fun startPlacingMode() {
         currentMode = MapMode.PLACING_MARKER
     }
 
-    fun handleMapClick(pos: Position) {
-        if (currentMode == MapMode.PLACING_MARKER || currentMode == MapMode.CONFIRMING) {
-            temporaryPosition = pos
+    fun handleMapClick(position: Position) {
+        if (currentMode == MapMode.PLACING_MARKER) {
+            temporaryPosition = position
             currentMode = MapMode.CONFIRMING
         }
     }
 
-    fun confirmMarker(description: String) {
-        val pos = temporaryPosition ?: return
-        val user = supabase.auth.currentUserOrNull()
-
-        viewModelScope.launch {
-            try {
-                supabase.postgrest.rpc(
-                    "create_marker",
-                    parameters = buildJsonObject {
-                        put("lat", pos.latitude)
-                        put("lon", pos.longitude)
-                        put("description", description)
-                        put("color", "red")
-                        put("image_url", "")
-                        put("user_id", user?.id)
-                    }
-                )
-                fetchMarkers()
-            } catch (e: Exception) {
-                println("DEBUG: FEHLER beim RPC: ${e.message}")
-            } finally {
-                resetToDefault()
-            }
-        }
-    }
-
-    fun deleteMarker(markerId: String, onSuccess: () -> Unit = {}) {
-        viewModelScope.launch {
-            try {
-                if (markerId.isNotEmpty()) {
-                    // 1. Datenbank-Löschung
-                    supabase.postgrest.from("markers").delete {
-                        filter { eq("id", markerId) }
-                    }
-
-                    // 2. Lokale Liste mutieren
-                    markerList.removeAll { it.id == markerId }
-
-                    onSuccess()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    suspend fun fetchMarkers() {
-        Log.d("DB", "Versuche Marker zu laden...")
-        try {
-            val list = supabase.postgrest.from("markers")
-                .select()
-                .decodeList<MarkerDto>()
-
-            Log.d("DB", "Marker geladen: ${list.size}")
-            markerList.clear()
-            markerList.addAll(list)
-        } catch (e: Exception) {
-            Log.e("DB", "FEHLER beim Laden: ${e.message}") // HIER IM LOGCAT SCHAUEN!
-        }
-    }
-
-    // JETZT KORREKT INNERHALB DER KLASSE PLATZIERT:
-    fun updateMarkerWithImage(id: String, newDescription: String, newColor: String, oldImageUrl: String, newImageBytes: ByteArray?) {
-        viewModelScope.launch {
-            try {
-                var finalImageUrl = oldImageUrl
-
-                if (newImageBytes != null) {
-                    val uploadedUrl = uploadMarkerImageAndGetUrl(id, newImageBytes)
-                    if (uploadedUrl != null) {
-                        finalImageUrl = uploadedUrl
-                    }
-                }
-
-                supabase.postgrest.from("markers")
-                    .update({
-                        set("description", newDescription)
-                        set("color", newColor)
-                        set("image_url", finalImageUrl)
-                    }) {
-                        filter { eq("id", id) }
-                    }
-
-                println("DEBUG: Marker $id erfolgreich aktualisiert!")
-                fetchMarkers()
-                selectedMarker = null
-
-            } catch (e: Exception) {
-                println("DEBUG: Fehler beim kombinierten Update: ${e.message}")
-            }
-        }
-    }
-
-    fun selectMarker(marker: MarkerDto) {
-        selectedMarker = marker
-    }
-
     fun cancelPlacing() {
-        resetToDefault()
-    }
-
-    fun updateUserPosition(newPosition: Position) {
-        // Falls deine Variable im ViewModel anders heißt (z.B. userLocation),
-        // passe den Namen hier entsprechend an!
-        userPosition = newPosition
-    }
-
-    private fun resetToDefault() {
         temporaryPosition = null
         currentMode = MapMode.DEFAULT
     }
 
-    suspend fun uploadMarkerImageAndGetUrl(markerId: String, imageBytes: ByteArray): String? {
-        return try {
-            val storagePath = "markers/$markerId.jpg"
-            supabase.storage["marker-images"].upload(storagePath, imageBytes, upsert = true)
-            supabase.storage["marker-images"].publicUrl(storagePath)
+    fun resetMode() {
+        cancelPlacing()
+    }
+
+    // 1. NEU: imageBytes als optionaler Parameter ergänzt
+    fun confirmMarker(
+        context: Context,
+        description: String = "Neuer Marker",
+        color: String = "#2196F3",
+        imageBytes: ByteArray? = null
+    ) {
+        val pos = temporaryPosition ?: return
+
+        viewModelScope.launch {
+            val currentUser = supabase.auth.currentUserOrNull() ?: return@launch
+
+            try {
+                var uploadedImageUrl: String? = null
+
+                // Bild hochladen, falls ein Bild ausgewählt wurde
+                if (imageBytes != null && imageBytes.isNotEmpty()) {
+                    val fileName = "marker_${UUID.randomUUID()}.jpg"
+                    val bucket = supabase.storage.from("marker-images")
+
+                    // Hier mit Komma statt geschweiften Klammern:
+                    bucket.upload(fileName, imageBytes, upsert = false)
+                    uploadedImageUrl = bucket.publicUrl(fileName)
+                }
+
+                val newMarker = buildJsonObject {
+                    put("user_id", currentUser.id)
+                    put("lat", pos.latitude)
+                    put("lon", pos.longitude)
+                    put("position", "POINT(${pos.longitude} ${pos.latitude})")
+                    put("description", description)
+                    put("color", color)
+                    if (uploadedImageUrl != null) {
+                        put("image_url", uploadedImageUrl)
+                    }
+                }
+
+                supabase.postgrest.from("markers").insert(newMarker)
+
+                Toast.makeText(context, "Marker gespeichert!", Toast.LENGTH_SHORT).show()
+                cancelPlacing()
+                loadMarkersForMap()
+
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Fehler beim Speichern: ${e.message}", e)
+                Toast.makeText(context, "Fehler: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun selectMarker(marker: MarkerDto?) {
+        selectedMarker = marker
+    }
+
+    fun updateUserPosition(position: Position) {
+        userPosition = position
+    }
+
+    suspend fun loadMarkersForMap() {
+        val currentUser = supabase.auth.currentUserOrNull() ?: run {
+            Log.e("MapViewModel", "❌ CANCELLED: Kein User in Supabase Auth angemeldet!")
+            return
+        }
+
+        try {
+            Log.d("MapViewModel", "🔄 Starte Laden der Marker für User: ${currentUser.id}...")
+
+            val rawMarkers = supabase.postgrest.from("markers")
+                .select()
+                .decodeList<MarkerDto>()
+
+            Log.d("MapViewModel", "SUCCESS! ${rawMarkers.size} Marker geladen.")
+
+            val processedMarkers = rawMarkers.map { marker ->
+                MapMarkerUiState(
+                    id = marker.id ?: "",
+                    creatorId = marker.user_id,
+                    lat = marker.lat ?: 0.0,
+                    lon = marker.lon ?: 0.0,
+                    description = marker.description ?: "",
+                    imageUrl = marker.image_url,
+                    displayColor = marker.color ?: "#2196F3",
+                    isOwnMarker = marker.user_id == currentUser.id
+                )
+            }
+
+            markerList.clear()
+            markerList.addAll(rawMarkers)
+
+            mapMarkers.clear()
+            mapMarkers.addAll(processedMarkers)
+
         } catch (e: Exception) {
-            Log.e("Storage", "Bild-Upload fehlgeschlagen: ${e.message}")
-            null
+            Log.e("MapViewModel", "💥 EXCEPTION BEIM LADEN DER MARKER: ${e.message}", e)
+        }
+    }
+
+    fun updateMarkerWithImage(
+        markerId: String,
+        description: String,
+        color: String,
+        oldImageUrl: String?,
+        newImageBytes: ByteArray?
+    ) {
+        viewModelScope.launch {
+            try {
+                var finalImageUrl = oldImageUrl
+
+                if (newImageBytes != null && newImageBytes.isNotEmpty()) {
+                    val fileName = "marker_${UUID.randomUUID()}.jpg"
+                    val bucket = supabase.storage.from("marker-images")
+
+                    // Auch hier mit Komma:
+                    bucket.upload(fileName, newImageBytes, upsert = true)
+                    finalImageUrl = bucket.publicUrl(fileName)
+                }
+
+                // 2. KORREKTUR: supabase.postgrest.from statt supabase.from
+                supabase.postgrest.from("markers").update({
+                    set("description", description)
+                    set("color", color)
+                    set("image_url", finalImageUrl)
+                }) {
+                    filter {
+                        eq("id", markerId)
+                    }
+                }
+
+                loadMarkersForMap()
+
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Fehler beim Aktualisieren des Markers", e)
+            }
+        }
+    }
+
+    fun deleteMarker(id: String) {
+        viewModelScope.launch {
+            try {
+                supabase.postgrest.from("markers").delete {
+                    filter { eq("id", id) }
+                }
+                selectedMarker = null
+                loadMarkersForMap()
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Fehler beim Löschen: ${e.message}")
+            }
         }
     }
 }

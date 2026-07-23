@@ -1,7 +1,0 @@
-- [x] Modify `MapScreen.kt` to check for location permissions before using MapLibre location components.
-- [x] Modify `MainActivity.kt` to request permissions on startup and potentially provide state to UI.
-- [x] Verify build and functionality.
-- [x] Implement robust "Center Camera on Start" logic in `MapScreen.kt`.
-    - [x] Move location state initialization outside `MaplibreMap`.
-    - [x] Implement `LaunchedEffect` for one-time camera centering.
-    - [x] Clean up redundant logic in `LocationTrackingEffect`.

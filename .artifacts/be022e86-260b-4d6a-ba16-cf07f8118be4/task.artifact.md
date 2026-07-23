@@ -1,3 +1,0 @@
-- [x] Fix Dp/Int type mismatch in `MapScreen.kt`
-- [x] Add comments explaining the changes
-- [x] Verify build with `./gradlew :app:compileDebugKotlin`
