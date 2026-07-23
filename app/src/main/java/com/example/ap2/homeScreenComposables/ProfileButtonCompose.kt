@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.homeScreenComposables
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.ap2.ui.theme.MoCo_2026Theme
 
 @Composable
 fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -23,7 +22,7 @@ fun ProfileButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Text(text = "Profile", textAlign = TextAlign.Center, maxLines = 1)
     }
     if (showMenu) {
-        ProfileWindow(onDismiss = { showMenu = false })
+        ProfileWindow { showMenu = false }
     }
 
 }

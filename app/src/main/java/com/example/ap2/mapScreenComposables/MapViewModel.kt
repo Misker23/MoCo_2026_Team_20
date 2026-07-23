@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope // WICHTIG: Dieser Import muss da sein!
-import com.example.ap2.MarkerDto
+import com.example.ap2.data_models.MarkerDto
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest

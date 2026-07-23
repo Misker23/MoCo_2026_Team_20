@@ -1,4 +1,4 @@
-package com.example.ap2.HomeScreenComposables
+package com.example.ap2.notUsedComposables
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.ap2.MarkerDto
+import com.example.ap2.data_models.MarkerDto
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.*
 

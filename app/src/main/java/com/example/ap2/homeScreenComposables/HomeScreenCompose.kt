@@ -30,7 +30,7 @@ import com.example.ap2.MapScreenComposeables.MapMode
 import com.example.ap2.MapScreenComposeables.MapScreen
 import com.example.ap2.MapScreenComposeables.MapViewModel
 import org.maplibre.spatialk.geojson.Position
-import com.example.ap2.sensors.MotionRepository
+import com.example.ap2.sensor_repositories.MotionRepository
 import kotlinx.coroutines.launch
 import io.github.jan.supabase.gotrue.auth
 

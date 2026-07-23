@@ -2,7 +2,6 @@ package com.example.ap2.MapScreenComposeables
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -11,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -27,7 +25,7 @@ import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.Position
 import com.example.ap2.HomeScreenComposables.SmallMarkerCompose
-import com.example.ap2.MarkerDto
+import com.example.ap2.data_models.MarkerDto
 import org.maplibre.compose.location.LocationPuck
 import org.maplibre.compose.location.LocationTrackingEffect
 import org.maplibre.compose.location.mostAccurateBearing

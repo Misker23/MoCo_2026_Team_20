@@ -1,4 +1,4 @@
-package com.example.ap2.viewmodels
+package com.example.ap2.FriendsScreenComposables
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

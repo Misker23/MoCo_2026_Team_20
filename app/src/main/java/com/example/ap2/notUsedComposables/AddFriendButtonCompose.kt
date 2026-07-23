@@ -1,4 +1,4 @@
-package com.example.ap2.FriendsScreenComposables
+package com.example.ap2.friendsScreenComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
