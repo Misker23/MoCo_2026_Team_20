@@ -18,6 +18,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Repräsentiert die UI des Authentifizierungsbildschirms.
+ * Bietet Eingabemasken für E-Mail, Passwort und (optional bei Registrierung) Benutzernamen.
+ *
+ * @param viewModel Das zugehörige [AuthViewModel], das den Status verwaltet.
+ * @param onAuthSuccess Callback für das Navigieren bei erfolgreichem Login/Registrieren.
+ */
 @Composable
 fun AuthScreenCompose(
     viewModel: AuthViewModel = viewModel(),

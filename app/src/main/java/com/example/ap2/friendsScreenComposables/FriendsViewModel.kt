@@ -12,10 +12,25 @@ import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 
+/**
+ * ViewModel zur Verwaltung von Freundschaften und der Freigabe von Markern an Freunde.
+ * Handhabt Datenbank-Operationen für Freundeslisten, Suche und Freigabe-Rechte (`shared_markers`).
+ */
 class FriendsViewModel : ViewModel() {
 
+    /** Beobachtbare Liste der aktuell bestätigten Freunde des angemeldeten Nutzers. */
     val friendsList = mutableStateListOf<FriendDto>()
 
+    /** Liste aller eigenen, selbst erstellten Marker. */
+    val myMarkers = mutableStateListOf<MarkerDto>()
+
+    /** Enthält die Marker-IDs, die aktuell für den ausgewählten Freund freigegeben sind. */
+    val currentFriendSharedMarkerIds = mutableStateListOf<String>()
+
+    /**
+     * Lädt alle bestätigten Freundschaften (`status = 'accepted'`) des Nutzers aus Supabase,
+     * inklusive zugehörigem Benutzerprofil und zugewiesener Marker-Farbe.
+     */
     suspend fun fetchFriends() {
         val user = supabase.auth.currentUserOrNull() ?: return
         try {
@@ -33,7 +48,13 @@ class FriendsViewModel : ViewModel() {
         }
     }
 
-    // Gibt null bei Erfolg zurück, oder einen Fehlertext bei Problemen
+    /**
+     * Sucht anhand eines Benutzernamens nach einem Profil und fügt dieses als Freund hinzu.
+     *
+     * @param usernameInput Der exakte Benutzername des anzufragenden Nutzers.
+     * @param selectedColor Die zugewiesene Farbe für die Marker dieses Freundes auf der Karte.
+     * @return `null` bei Erfolg oder eine Fehlermeldung als [String] zur Anzeige im Dialog.
+     */
     suspend fun addFriendByUsername(usernameInput: String, selectedColor: String): String? {
         val user = supabase.auth.currentUserOrNull() ?: return "Nicht angemeldet."
         val cleanName = usernameInput.trim()
@@ -76,15 +97,17 @@ class FriendsViewModel : ViewModel() {
             )
             supabase.postgrest.from("friendships").insert(newFriend)
 
-            // Liste neu laden
             fetchFriends()
-            return null // null bedeutet: Erfolg!
+            return null
         } catch (e: Exception) {
             Log.e("Friends", "Fehler beim Hinzufügen: ${e.message}", e)
             return "Fehler beim Hinzufügen: ${e.message}"
         }
     }
 
+    /**
+     * Löscht eine Freundschaftsbeziehung zwischen dem Nutzer und der angegebenen [friendUserId].
+     */
     suspend fun removeFriend(friendUserId: String) {
         val user = supabase.auth.currentUserOrNull() ?: return
         try {
@@ -98,24 +121,9 @@ class FriendsViewModel : ViewModel() {
         }
     }
 
-    suspend fun shareMarkerWithFriend(markerId: String, friendUserId: String): Boolean {
-        return try {
-            val shareData = mapOf(
-                "marker_id" to markerId,
-                "friend_user_id" to friendUserId
-            )
-            supabase.postgrest.from("shared_markers").insert(shareData)
-            true // Erfolgreich geteilt
-        } catch (e: Exception) {
-            Log.e("Marker", "Fehler beim Teilen des Markers: ${e.message}")
-            false
-        }
-    }
-
-    val myMarkers = mutableStateListOf<MarkerDto>()
-    val currentFriendSharedMarkerIds = mutableStateListOf<String>()
-
-    // 1. Eigene Marker laden
+    /**
+     * Lädt alle eigenen Marker, die der angemeldete Nutzer erstellt hat.
+     */
     suspend fun fetchMyMarkers() {
         val user = supabase.auth.currentUserOrNull() ?: return
         try {
@@ -131,7 +139,11 @@ class FriendsViewModel : ViewModel() {
         }
     }
 
-    // 2. Bereits geteilte Marker-IDs für einen bestimmten Freund laden
+    /**
+     * Ruft die IDs aller Marker ab, die der Nutzer derzeit für einen bestimmten Freund freigegeben hat.
+     *
+     * @param friendUserId Die ID des betreffenden Freundes.
+     */
     suspend fun fetchSharedMarkerIdsForFriend(friendUserId: String) {
         try {
             val shares = supabase.postgrest.from("shared_markers")
@@ -147,15 +159,19 @@ class FriendsViewModel : ViewModel() {
         }
     }
 
-    // 3. Neue Auswahl in 'shared_markers' speichern
+    /**
+     * Aktualisiert die Marker-Freigaben für einen Freund, indem alle alten Einträge in `shared_markers`
+     * gelöscht und die neuen [selectedMarkerIds] neu eingefügt werden.
+     *
+     * @param friendUserId ID des Freundes.
+     * @param selectedMarkerIds Eine Liste mit allen Marker-IDs, die freigegeben werden sollen.
+     */
     suspend fun saveMarkerSharesForFriend(friendUserId: String, selectedMarkerIds: List<String>) {
         try {
-            // Alte Freigaben für diesen Freund löschen
             supabase.postgrest.from("shared_markers").delete {
                 filter { eq("friend_user_id", friendUserId) }
             }
 
-            // Neue Freigaben einfügen
             if (selectedMarkerIds.isNotEmpty()) {
                 val newShares = selectedMarkerIds.map { markerId ->
                     SharedMarkerDto(markerId = markerId, friendUserId = friendUserId)

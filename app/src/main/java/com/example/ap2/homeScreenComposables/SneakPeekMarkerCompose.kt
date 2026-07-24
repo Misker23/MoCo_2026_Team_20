@@ -21,6 +21,15 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage // Wichtig für Bilder[cite: 1]
 import com.example.ap2.data_models.MarkerDto
 
+/**
+ * Eine kompakte Vorschau-Karte (Sneak Peek) am unteren Bildschirmrand.
+ * Zeigt kurz Titel, Bild und Farbe eines auf der Karte angetippten Markers an,
+ * bevor das vollständige Detailfenster geöffnet wird.
+ *
+ * @param markerDto Der anzuzeigende Marker.
+ * @param userPosition Aktuelle Position des Nutzers.
+ * @param onExpandRequested Callback zum Öffnen des vollständigen [MarkerWindow].
+ */
 @Composable
 fun SneakPeekMarkerCompose(
     markerDto: MarkerDto,

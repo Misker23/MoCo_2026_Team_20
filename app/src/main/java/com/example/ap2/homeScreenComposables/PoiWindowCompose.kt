@@ -31,6 +31,17 @@ import com.example.ap2.data_models.MarkerDto
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.*
 
+/**
+ * Übersichtsdialog ("Points of Interest"), der alle verfügbaren Marker in einer Liste darstellt.
+ * Erlaubt das Filtern nach eigenen und geteilten Markern sowie das Berechnen der Luftlinie-Distanz.
+ *
+ * @param bottomPadding Abstand nach unten.
+ * @param markerList Liste aller geladenen Marker.
+ * @param userPosition Aktuelle GPS-Position des Nutzers zur Distanzberechnung.
+ * @param currentUserId Die ID des angemeldeten Nutzers zur Eigentümer-Ermittlung.
+ * @param onDismiss Callback zum Schließen des Fensters.
+ * @param onPoiSelected Callback, wenn auf einen Marker getippt wird (z. B. für Kamera-Fokus).
+ */
 @Composable
 fun POIWindow(
     bottomPadding: Dp,
@@ -209,7 +220,11 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
     }
 }
 
-// Haversine-Formel zur Distanzberechnung zwischen zwei GPS-Koordinaten
+/**
+ * Berechnet die Entfernung zwischen zwei GPS-Koordinaten mithilfe der Haversine-Formel.
+ *
+ * @return Formatierter String der Distanz in Metern (z. B. "250 m") oder Kilometern (z. B. "3.4 km").
+ */
 @SuppressLint("DefaultLocale")
 private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): String {
     val earthRadius = 6371.0 // km

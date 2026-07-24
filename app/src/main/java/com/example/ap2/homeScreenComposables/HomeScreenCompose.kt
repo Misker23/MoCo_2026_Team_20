@@ -29,6 +29,16 @@ import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
 
+/**
+ * Detail- und Bearbeitungsdialog für einen ausgewählten Marker.
+ * Bietet die Möglichkeit, Beschreibung, Marker-Farbe sowie ein Bild hochzuladen oder den Marker zu löschen.
+ *
+ * @param bottomPadding Abstand nach unten (z. B. für die Navigation-Bar).
+ * @param markerDto Das zu bearbeitende Marker-Objekt.
+ * @param onDismiss Callback zum Schließen des Popups.
+ * @param onSave Callback zum Speichern mit geänderter Beschreibung, Farbe und optionalen Bild-Bytes.
+ * @param onDelete Callback zum endgültigen Löschen des Markers aus der Datenbank.
+ */
 @Composable
 fun HomeScreen(
     viewModel: MapViewModel = viewModel(),

@@ -11,16 +11,39 @@ import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * ViewModel zur Steuerung der Authentifizierungslogik (Login und Registrierung).
+ * Verwalte den UI-Zustand für Eingabefelder, Fehlermeldungen sowie den Ladezustand
+ * und kommuniziert direkt mit Supabase GoTrue Auth.
+ */
 class AuthViewModel : ViewModel() {
 
+    /** Steuert, ob der Bildschirm im Registrierungs- (true) oder Login-Modus (false) ist. */
     var isSignUpMode by mutableStateOf(false)
+
+    /** Die im Textfeld eingegebene E-Mail-Adresse. */
     var email by mutableStateOf("")
+
+    /** Das im Textfeld eingegebene Passwort. */
     var password by mutableStateOf("")
+
+    /** Der gewählte Benutzername (wird nur bei der Registrierung verwendet). */
     var username by mutableStateOf("")
 
+    /** Aktualisierbare Fehlermeldung zur Anzeige in der UI. Null, wenn kein Fehler vorliegt. */
     var errorMessage by mutableStateOf<String?>(null)
+
+    /** Ladeindikator für asynchrone Netzwerk-Anfragen. */
     var isLoading by mutableStateOf(false)
 
+    /**
+     * Führt je nach [isSignUpMode] entweder eine Registrierung oder einen Login über Supabase durch.
+     *
+     * Bei der Registrierung wird der Benutzername in die `data`-Metadata von Supabase Auth geschrieben,
+     * wo ein Postgres-Trigger ihn automatisch in die `profiles`-Tabelle überträgt.
+     *
+     * @param onSuccess Callback, der nach erfolgreicher Authentifizierung ausgeführt wird (z. B. Navigation).
+     */
     suspend fun handleAuth(onSuccess: () -> Unit) {
         if (email.isBlank() || password.isBlank()) {
             errorMessage = "Bitte E-Mail und Passwort eingeben."
@@ -37,8 +60,6 @@ class AuthViewModel : ViewModel() {
 
         try {
             if (isSignUpMode) {
-                // Registrierung: Username wird in die User-Metadata geschrieben,
-                // wo ihn dein Postgres-Trigger direkt für die 'profiles'-Tabelle abgreift!
                 supabase.auth.signUpWith(Email) {
                     this.email = this@AuthViewModel.email.trim()
                     this.password = this@AuthViewModel.password
@@ -48,7 +69,6 @@ class AuthViewModel : ViewModel() {
                 }
                 Log.d("Auth", "Registrierung erfolgreich!")
             } else {
-                // Login
                 supabase.auth.signInWith(Email) {
                     this.email = this@AuthViewModel.email.trim()
                     this.password = this@AuthViewModel.password

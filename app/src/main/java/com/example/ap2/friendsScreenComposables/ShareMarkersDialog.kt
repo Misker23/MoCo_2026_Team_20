@@ -13,6 +13,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ap2.data_models.MarkerDto
 
+/**
+ * Ein Auswahldialog zur Freigabe eigener Marker an einen bestimmten Freund.
+ * Zeigt eine Checkliste aller eigenen Marker mit deren Freigabestatus an.
+ *
+ * @param friendName Name des Freundes für den Titel.
+ * @param myMarkers Liste der eigenen Marker des Nutzers.
+ * @param initialSharedIds Liste der aktuell bereits freigegebenen Marker-IDs.
+ * @param onDismiss Callback beim Schließen des Dialogs ohne Speichern.
+ * @param onSave Callback mit den neu ausgewählten Marker-IDs beim Bestätigen.
+ */
 @Composable
 fun ShareMarkersDialog(
     friendName: String,

@@ -21,8 +21,21 @@ import io.github.jan.supabase.gotrue.auth
 import com.example.ap2.homeScreenComposables.HomeScreen
 import com.example.ap2.friendsScreenComposables.FriendsScreenCompose
 
+/**
+ * Haupteinstiegspunkt der Anwendung.
+ *
+ * Die Aktivität übernimmt folgende Aufgaben:
+ * 1. Initialisierung der Standortberechtigungen (GPS).
+ * 2. Aktivierung der Edge-to-Edge-Anzeige für ein modernes Design.
+ * 3. Überprüfung des Authentifizierungsstatus (Supabase).
+ * 4. Bereitstellung der Navigations-Host-Logik (zwischen Auth-, Home- und Friends-Bildschirmen).
+ */
 class MainActivity : ComponentActivity() {
 
+    /**
+     * Launcher für das Anfordern von Standortberechtigungen.
+     * Verarbeitet das Ergebnis der Anfrage (Fine/Coarse Location).
+     */
     private val locationPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
@@ -31,31 +44,36 @@ class MainActivity : ComponentActivity() {
             val coarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
             if (fineLocation || coarseLocation) {
-                // Berechtigung erteilt
+                // Berechtigung wurde erteilt, Kartenanwendung kann Standort nutzen.
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Standortberechtigungen beim Start prüfen
         requestLocationPermission()
+
+        // Aktiviert Edge-to-Edge für rahmenlose Darstellung
         enableEdgeToEdge()
 
         setContent {
             MoCo_2026Theme {
-                // Prüft beim Start, ob bereits eine aktive Supabase-Sitzung existiert
+                // Prüft beim Start, ob bereits eine aktive Supabase-Sitzung existiert.
+                // Steuert, ob der User direkt auf den Homescreen oder zum Login muss.
                 var isLoggedIn by remember {
                     mutableStateOf(supabase.auth.currentUserOrNull() != null)
                 }
 
                 if (isLoggedIn) {
-                    // EINGELOGGT: Zeige Navigation zwischen HomeScreen und FriendsScreen
+                    // EINGELOGGT: Navigations-Controller und Pfade für die Hauptanwendung
                     val navController = rememberNavController()
 
                     NavHost(
                         navController = navController,
                         startDestination = HomeRoute
                     ) {
+                        // Hauptansicht (Karte & Overlays)
                         composable<HomeRoute> {
                             HomeScreen(
                                 onNavigateToFriends = {
@@ -67,6 +85,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        // Freundesliste & Marker-Freigabe
                         composable<FriendsRoute> {
                             FriendsScreenCompose(
                                 onNavigateBack = {
@@ -76,7 +95,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 } else {
-                    // NICHT EINGELOGGT: Zeige den AuthScreen für Login / Registrierung
+                    // NICHT EINGELOGGT: Auth-Screen für Login oder Registrierung
                     AuthScreenCompose(
                         onAuthSuccess = {
                             isLoggedIn = true
@@ -87,6 +106,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Überprüft, ob Standortberechtigungen bereits vorhanden sind.
+     * Wenn nicht, werden diese via System-Dialog angefragt.
+     */
     private fun requestLocationPermission() {
         val fineGranted = ContextCompat.checkSelfPermission(
             this,

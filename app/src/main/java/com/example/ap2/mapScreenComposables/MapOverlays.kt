@@ -19,9 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * Zeigt einen Hinweistext am oberen Bildschirmrand an, wenn sich die App
+ * im Modus [MapMode.PLACING_MARKER] befindet
+ * Fordert den Nutzer auf, auf einen beliebigen Punkt der Karte zu tippen.
+ *
+ * @param onCancel Callback zum Abbrechen des Platzierungsmodus
+ * @param modifier Optionaler Layout-Modifier
+ */
 @Composable
 fun PlacingModeHint(
-    onCancel: () -> Unit, // Aktion fürs Abbrechen
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -36,7 +44,6 @@ fun PlacingModeHint(
                 text = "Tippe auf die Karte, um den Marker zu setzen",
                 color = Color.White
             )
-            // Abbruch-Button
             Button(
                 onClick = onCancel,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.6f)),
@@ -48,10 +55,18 @@ fun PlacingModeHint(
     }
 }
 
+/**
+ * Ein Bestätigungs-Overlay am unteren Bildschirmrand, nachdem der Nutzer
+ * im Platzierungsmodus einen Punkt auf der Karte angetippt hat
+ *
+ * @param onConfirm Callback zum Speichern des temporären Markers an der gewählten Position
+ * @param onCancel Callback zum Verwürfen des gesetzten Punkts und Zurückkehren in den Standardmodus
+ * @param modifier Optionaler Layout-Modifier
+ */
 @Composable
 fun ConfirmMarkerOverlay(
-    onConfirm: () -> Unit, // Aktion fürs Bestätigen
-    onCancel: () -> Unit, // Aktion fürs Abbrechen
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -64,12 +79,10 @@ fun ConfirmMarkerOverlay(
         ) {
             Text("Marker hier speichern?", fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
 
-            // Buttons nebeneinander anordnen
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Abbrechen-Button
                 Button(
                     onClick = onCancel,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
@@ -80,7 +93,6 @@ fun ConfirmMarkerOverlay(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Bestätigen-Button
                 Button(
                     onClick = onConfirm,
                     modifier = Modifier.weight(1f)

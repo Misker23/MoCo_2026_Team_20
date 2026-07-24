@@ -40,6 +40,10 @@ import org.maplibre.compose.location.rememberDefaultLocationProvider
 import org.maplibre.compose.location.rememberDefaultOrientationProvider
 import org.maplibre.compose.location.rememberUserLocationState
 
+/**
+ * Haupt-Kartenansicht. Verwaltet das Zeichnen der Karte, Marker-Overlays
+ * und Standort-Funktionalitäten.
+ */
 @Composable
 fun MapScreen(
     viewModel: MapViewModel,
@@ -69,7 +73,7 @@ fun MapScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Reagiert auf Klicks auf den Standort-Button und animiert die Karte über 'camera'
+    // Standort-Zentrierung
     LaunchedEffect(viewModel.centerOnUserTrigger) {
         if (viewModel.centerOnUserTrigger > 0) {
             val targetCameraPosition = CameraPosition(
