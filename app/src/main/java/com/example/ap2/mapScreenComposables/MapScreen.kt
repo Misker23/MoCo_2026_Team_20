@@ -78,7 +78,7 @@ fun MapScreen(
         if (viewModel.centerOnUserTrigger > 0) {
             val targetCameraPosition = CameraPosition(
                 target = viewModel.userPosition,
-                zoom = 15.0
+                zoom = 18.0
             )
             camera.animateTo(
                 finalPosition = targetCameraPosition
