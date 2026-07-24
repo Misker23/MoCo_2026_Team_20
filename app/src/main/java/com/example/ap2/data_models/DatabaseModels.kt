@@ -9,10 +9,8 @@ data class MarkerDto(
 
     @SerialName("user_id")
     val user_id: String = "",
-
     val lat: Double = 0.0,
     val lon: Double = 0.0,
-
     val description: String? = null,
     val color: String? = null,
 
@@ -31,7 +29,7 @@ data class FriendColorDto(
     val color: String?
 )
 
-// Fertiges UI-Modell für deine Map/Compose
+// Fertiges UI-Modell für eine Map/Compose
 data class MapMarkerUiState(
     val id: String,
     val creatorId: String,
