@@ -134,7 +134,7 @@ CREATE OR REPLACE FUNCTION public.create_marker(lat double precision, lon double
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  INSERT INTO markers (creator_id, position, description, color, image_url)
+  INSERT INTO markers (user_id, position, description, color, image_url)
   VALUES (
     user_id, 
     ST_SetSRID(ST_MakePoint(lon, lat), 4326), 
@@ -145,8 +145,6 @@ BEGIN
 END;
 $function$
 ;
-
-create type "public"."geometry_dump" as ("path" integer[], "geom" public.geometry);
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
@@ -194,8 +192,6 @@ AS $function$
   );
 $function$
 ;
-
-create type "public"."valid_detail" as ("valid" boolean, "reason" character varying, "location" public.geometry);
 
 grant references on table "public"."friendships" to "anon";
 
