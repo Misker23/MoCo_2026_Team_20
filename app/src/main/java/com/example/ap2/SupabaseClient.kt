@@ -8,8 +8,8 @@ import io.github.jan.supabase.serializer.KotlinXSerializer
 import kotlinx.serialization.json.Json
 
 val supabase = createSupabaseClient(
-    supabaseUrl = "http://10.0.2.2:8000",
-    supabaseKey = "850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907"
+    supabaseUrl = "http://192.168.0.110:8000",
+    supabaseKey = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
 ) {
     install(Postgrest) {
         // Zwingt den Parser, zusätzliche Datenbank-Spalten wie 'position' zu ignorieren

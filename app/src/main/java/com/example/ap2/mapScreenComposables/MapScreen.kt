@@ -39,6 +39,7 @@ import org.maplibre.compose.location.mostAccurateBearing
 import org.maplibre.compose.location.rememberDefaultLocationProvider
 import org.maplibre.compose.location.rememberDefaultOrientationProvider
 import org.maplibre.compose.location.rememberUserLocationState
+import org.maplibre.compose.camera.CameraMoveReason
 
 /**
  * Haupt-Kartenansicht. Verwaltet das Zeichnen der Karte, Marker-Overlays
@@ -95,12 +96,22 @@ fun MapScreen(
 
             LaunchedEffect(locationState.location) {
                 val position = locationState.location?.position?.value
+
                 if (position != null) {
                     viewModel.updateUserPosition(position)
+
                     if (!isInitialLocationSet) {
-                        camera.animateTo(CameraPosition(target = position, zoom = 17.0))
+                        camera.animateTo(CameraPosition(target = position, zoom = 18.0))
                         isInitialLocationSet = true
                     }
+                    else if(viewModel.isFollowingUser){
+                        camera.animateTo(finalPosition = camera.position.copy(target = position))
+                    }
+                }
+            }
+            LaunchedEffect(camera.moveReason) {
+                if (camera.moveReason == CameraMoveReason.GESTURE) {
+                    viewModel.stopFollowingUser()
                 }
             }
 

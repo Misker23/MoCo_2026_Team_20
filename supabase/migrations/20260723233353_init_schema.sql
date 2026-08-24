@@ -146,6 +146,7 @@ END;
 $function$
 ;
 
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -192,6 +193,8 @@ AS $function$
   );
 $function$
 ;
+
+create type "public"."valid_detail" as ("valid" boolean, "reason" character varying, "location" public.geometry);
 
 grant references on table "public"."friendships" to "anon";
 

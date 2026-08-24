@@ -67,6 +67,9 @@ class MapViewModel : ViewModel() {
     var centerOnUserTrigger by mutableIntStateOf(0)
         private set
 
+    var isFollowingUser by mutableStateOf(false)
+        private set
+
     // --- MAP STEUERUNG ---
 
     /**
@@ -75,7 +78,12 @@ class MapViewModel : ViewModel() {
      */
     fun centerOnUserLocation() {
         selectedMarker = null
+        isFollowingUser = true
         centerOnUserTrigger++
+    }
+
+    fun stopFollowingUser() {
+        isFollowingUser = false
     }
 
     /** Aktiviert den Modus zum Platzieren eines neuen Markers. */

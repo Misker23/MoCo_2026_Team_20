@@ -17,7 +17,7 @@ openai_api_key = "env(OPENAI_API_KEY)"
 
 [auth]
 site_url = "http://localhost:3000"
-# Stelle sicher, dass diese Redirects mit deiner App-Logik übereinstimmen
+# Stelle sicher, dass diese Redirects mit deiner App-Logik Ã¼bereinstimmen
 additional_redirect_urls = [
     "http://localhost:3000/*"
 ]
@@ -35,8 +35,8 @@ enable_confirmations = false
 # client_id = "env(GITHUB_CLIENT_ID)"
 # secret = "env(GITHUB_SECRET)"
 
-[functions.search-embeddings]
-verify_jwt = false
+#[functions.search-embeddings]
+#verify_jwt = false
 
 [analytics]
 enabled = false
