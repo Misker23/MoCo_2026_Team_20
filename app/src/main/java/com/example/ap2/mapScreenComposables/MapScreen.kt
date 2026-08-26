@@ -40,6 +40,11 @@ import org.maplibre.compose.location.rememberDefaultLocationProvider
 import org.maplibre.compose.location.rememberDefaultOrientationProvider
 import org.maplibre.compose.location.rememberUserLocationState
 import org.maplibre.compose.camera.CameraMoveReason
+import androidx.compose.ui.graphics.Color
+import org.maplibre.compose.expressions.dsl.const
+import org.maplibre.compose.layers.FillLayer
+import org.maplibre.compose.sources.rememberGeoJsonSource
+import org.maplibre.compose.sources.GeoJsonData
 
 /**
  * Haupt-Kartenansicht. Verwaltet das Zeichnen der Karte, Marker-Overlays
@@ -117,6 +122,7 @@ fun MapScreen(
 
             LaunchedEffect(Unit) {
                 viewModel.loadMarkersForMap()
+                viewModel.loadFog()
             }
 
             // 1. --- KARTE ---
@@ -134,7 +140,27 @@ fun MapScreen(
                     ornamentOptions = OrnamentOptions(isCompassEnabled = true, compassAlignment = Alignment.TopEnd, isScaleBarEnabled = true, scaleBarAlignment = Alignment.TopStart)
                 )
             ) {
-                LocationPuck(idPrefix = "user", location = locationState.location, bearing = locationState.mostAccurateBearing(), cameraState = camera)
+                if (viewModel.fogGeoJson != null) {
+
+                    val fogSource = rememberGeoJsonSource(
+                        data = GeoJsonData.JsonString(viewModel.fogGeoJson!!)
+                    )
+
+                    FillLayer(
+                        id = "fog-layer",
+                        source = fogSource,
+                        color = const(Color.DarkGray),
+                        opacity = const(0.98f)
+                    )
+                }
+
+                LocationPuck(
+                    idPrefix = "user",
+                    location = locationState.location,
+                    bearing = locationState.mostAccurateBearing(),
+                    cameraState = camera
+                )
+
                 LocationTrackingEffect(locationState = locationState) {}
             }
 

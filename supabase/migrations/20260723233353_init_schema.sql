@@ -120,7 +120,7 @@ BEGIN
     SET fog_polygon = ST_Union(
         fog_polygon,
         -- Zieht einen 100 Meter Radius um die neue Koordinate
-        ST_Buffer(ST_SetSRID(ST_MakePoint(new_lon, new_lat), 4326)::geography, 100)::geometry
+        ST_Buffer(ST_SetSRID(ST_MakePoint(new_lon, new_lat), 4326)::geography, 50)::geometry
     )
     WHERE user_id = auth.uid();
 END;
@@ -194,7 +194,6 @@ AS $function$
 $function$
 ;
 
-create type "public"."valid_detail" as ("valid" boolean, "reason" character varying, "location" public.geometry);
 
 grant references on table "public"."friendships" to "anon";
 

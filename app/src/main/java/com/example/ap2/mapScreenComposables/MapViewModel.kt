@@ -15,10 +15,12 @@ import com.example.ap2.data_models.MarkerDto
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.JsonObject
 import org.maplibre.spatialk.geojson.Position
 import java.util.UUID
 
@@ -55,6 +57,13 @@ class MapViewModel : ViewModel() {
 
     /** Vorläufige Position, wenn ein neuer Marker platziert, aber noch nicht bestätigt wurde. */
     var temporaryPosition by mutableStateOf<Position?>(null)
+
+    private var lastFogPosition: Position? = null
+
+    private val fogUpdateDistance = 25.0
+
+    var fogGeoJson by mutableStateOf<String?>(null)
+        private set
 
     // --- DATEN-LISTEN ---
     /** Liste der Marker-Datenmodelle (direkt von Supabase). */
@@ -180,6 +189,94 @@ class MapViewModel : ViewModel() {
     /** Aktualisiert die intern gespeicherte Position des Nutzers. */
     fun updateUserPosition(position: Position) {
         userPosition = position
+
+        checkFogUpdate(position)
+    }
+
+    private fun distanceBetween(
+        first: Position,
+        second: Position
+    ): Float {
+        val result = FloatArray(1)
+
+        android.location.Location.distanceBetween(
+            first.latitude,
+            first.longitude,
+            second.latitude,
+            second.longitude,
+            result
+        )
+
+        return result[0]
+    }
+
+    private fun checkFogUpdate(position: Position) {
+
+        val lastPosition = lastFogPosition
+
+        if (lastPosition == null) {
+            lastFogPosition = position
+            addFogPoint(position)
+            return
+        }
+
+        val distance = distanceBetween(lastPosition, position)
+
+        if (distance >= fogUpdateDistance) {
+            lastFogPosition = position
+            addFogPoint(position)
+        }
+    }
+
+    private fun addFogPoint(position: Position) {
+
+        viewModelScope.launch {
+
+            try {
+
+                supabase.postgrest.rpc(
+                    "add_fog_point",
+                    buildJsonObject {
+                        put("new_lat", position.latitude)
+                        put("new_lon", position.longitude)
+                    }
+                )
+                loadFog()
+
+                Log.d(
+                    "MapViewModel",
+                    "Fog aktualisiert: ${position.latitude}, ${position.longitude}"
+                )
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "MapViewModel",
+                    "Fehler beim Aktualisieren des Fogs",
+                    e
+                )
+            }
+        }
+    }
+
+    fun loadFog() {
+        viewModelScope.launch {
+            try {
+                supabase.postgrest.rpc("ensure_user_fog")
+
+                val result = supabase.postgrest.rpc("get_user_fog")
+                fogGeoJson = result.data
+
+                Log.d("MapViewModel", "RPC Ergebnis: ${result.data}")
+
+            } catch (e: Exception) {
+                Log.e(
+                    "MapViewModel",
+                    "Fehler beim Laden des Fogs",
+                    e
+                )
+            }
+        }
     }
 
     /**
