@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.1"
+agp = "9.3.2"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -9,8 +9,11 @@ lifecycle = "2.8.7"
 activityCompose = "1.8.0"
 navigation = "2.8.5"
 kotlin = "2.2.10"
+#Mindestens Room 2.7+ notwendig für Kotlin 2.x / K2-Compiler & KSP
+ksp = "2.3.11" #Passend zur Kotlin-Version 2.2.10
+room = "2.8.4"
 kotlinxSerializationJson = "1.11.0"
-composeBom = "2026.02.01"
+composeBom = "2024.10.01"
 postgrestKt = "3.6.0"
 ui = "1.11.2"
 camerax = "1.4.1"
@@ -51,8 +54,13 @@ gotrue-kt = { module = "io.github.jan-tennert.supabase:gotrue-kt", version.ref =
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

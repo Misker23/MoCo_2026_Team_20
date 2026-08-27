@@ -12,79 +12,92 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ap2.data_models.MapMarkerUiState
 import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.repositories.MapRepository
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
-import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.JsonObject
 import org.maplibre.spatialk.geojson.Position
-import java.util.UUID
 
-/**
- * Aufzählung der verschiedenen Zustände des Interaktionsmodus auf der Karte.
- */
 enum class MapMode {
-    /** Standard-Kartenansicht: Marker können betrachtet werden. */
     DEFAULT,
-    /** Modus aktiv: Der Nutzer soll einen Punkt auf der Karte für einen neuen Marker wählen. */
     PLACING_MARKER,
-    /** Marker-Position gesetzt: Bestätigungs-Overlay für den finalen Speicher-Vorgang sichtbar. */
     CONFIRMING
 }
 
-/**
- * Zentrale ViewModel-Klasse für die Karten-Steuerung.
- *
- * Diese Klasse fungiert als Bindeglied zwischen der UI (MapScreen) und Supabase.
- * Sie verwaltet den aktuellen Kartenmodus, den Standort des Nutzers,
- * das Laden/Speichern von Markern sowie den Upload von Bildern in den Supabase Storage.
- */
 class MapViewModel : ViewModel() {
 
+    private lateinit var repository: MapRepository
+
     // --- STATE VARIABLEN ---
-    /** Aktuelle GPS-Position des Nutzers auf der Karte. */
     var userPosition by mutableStateOf(Position(longitude = 7.6261, latitude = 51.2180))
-
-    /** Der derzeit aktive Interaktionsmodus. */
     var currentMode by mutableStateOf(MapMode.DEFAULT)
-
-    /** Referenz auf den aktuell ausgewählten Marker (z. B. für Detailansicht). */
     var selectedMarker by mutableStateOf<MarkerDto?>(null)
-
-    /** Vorläufige Position, wenn ein neuer Marker platziert, aber noch nicht bestätigt wurde. */
     var temporaryPosition by mutableStateOf<Position?>(null)
 
     private var lastFogPosition: Position? = null
-
     private val fogUpdateDistance = 25.0
 
     var fogGeoJson by mutableStateOf<String?>(null)
         private set
 
     // --- DATEN-LISTEN ---
-    /** Liste der Marker-Datenmodelle (direkt von Supabase). */
     val markerList = mutableStateListOf<MarkerDto>()
-
-    /** Aufbereitete Liste für die UI-Darstellung (MapMarkerUiState). */
     val mapMarkers = mutableStateListOf<MapMarkerUiState>()
 
-    /** Trigger-Variable: Wird bei Änderung inkrementiert, um die Kamera-Animation in der UI auszulösen. */
     var centerOnUserTrigger by mutableIntStateOf(0)
         private set
 
     var isFollowingUser by mutableStateOf(false)
         private set
 
+    // --- REPOSITORY INITIALISIERUNG & FLOW OBSERVATION ---
+
+    fun initRepository(context: Context) {
+        if (!::repository.isInitialized) {
+            repository = MapRepository(context.applicationContext)
+            observeLocalData()
+        }
+    }
+
+    private fun observeLocalData() {
+        val currentUser = supabase.auth.currentUserOrNull()
+
+        // 1. Marker aus Room beobachten
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.getMarkersFlow().collect { markers ->
+                withContext(Dispatchers.Main) {
+                    markerList.clear()
+                    markerList.addAll(markers)
+                }
+            }
+        }
+
+        // 2. Fog GeoJSON aus Room beobachten (falls User angemeldet)
+        if (currentUser != null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                repository.getFogFlow(currentUser.id).collect { geoJson ->
+                    withContext(Dispatchers.Main) {
+                        if (geoJson != null) {
+                            fogGeoJson = geoJson
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Nebel initial direkt laden & Sync anstoßen
+        loadFog()
+        repository.triggerBackgroundSync()
+    }
+
     // --- MAP STEUERUNG ---
 
-    /**
-     * Setzt die Kamera zurück auf den Standort des Nutzers.
-     * Schließt zudem die Detailansicht eines Markers.
-     */
     fun centerOnUserLocation() {
         selectedMarker = null
         isFollowingUser = true
@@ -95,16 +108,10 @@ class MapViewModel : ViewModel() {
         isFollowingUser = false
     }
 
-    /** Aktiviert den Modus zum Platzieren eines neuen Markers. */
     fun startPlacingMode() {
         currentMode = MapMode.PLACING_MARKER
     }
 
-    /**
-     * Handler für Klicks auf die Karte.
-     * Wenn im [MapMode.PLACING_MARKER], wird die Position als [temporaryPosition] gespeichert
-     * und der Modus auf [MapMode.CONFIRMING] gewechselt.
-     */
     fun handleMapClick(position: Position) {
         if (currentMode == MapMode.PLACING_MARKER) {
             temporaryPosition = position
@@ -112,93 +119,73 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    /** Bricht den Erstell- oder Platzierungsprozess ab. */
     fun cancelPlacing() {
         temporaryPosition = null
         currentMode = MapMode.DEFAULT
     }
 
-    /** Hilfsfunktion zum Zurücksetzen auf den Default-Modus. */
     fun resetMode() {
         cancelPlacing()
     }
 
-    // --- SUPABASE OPERATIONEN ---
+    // --- OFFLINE-FIRST MARKER OPERATIONEN ---
 
-    /**
-     * Speichert einen neuen Marker in Supabase.
-     *
-     * 1. Falls [imageBytes] vorhanden: Upload in Supabase Storage (`marker-images` Bucket).
-     * 2. Speichern des Marker-Objekts inkl. der resultierenden Bild-URL in der `markers` Tabelle.
-     * 3. Refresh der Marker-Liste.
-     */
     fun confirmMarker(
         context: Context,
         description: String = "Neuer Marker",
         color: String = "#2196F3",
         imageBytes: ByteArray? = null
     ) {
+        initRepository(context)
+
         val pos = temporaryPosition ?: return
+        val currentUser = supabase.auth.currentUserOrNull() ?: return
 
-        viewModelScope.launch {
-            val currentUser = supabase.auth.currentUserOrNull() ?: return@launch
-
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                var uploadedImageUrl: String? = null
+                // Generiere EINE feste ID für diesen neuen Marker
+                val newMarkerId = java.util.UUID.randomUUID().toString()
 
-                // Bild-Upload Logik
-                if (imageBytes != null && imageBytes.isNotEmpty()) {
-                    val fileName = "marker_${UUID.randomUUID()}.jpg"
-                    val bucket = supabase.storage.from("marker-images")
+                repository.saveMarkerLocally(
+                    userId = currentUser.id,
+                    lat = pos.latitude,
+                    lon = pos.longitude,
+                    desc = description,
+                    color = color,
+                    imageBytes = imageBytes,
+                    markerId = newMarkerId // <-- Feste ID übergeben
+                )
 
-                    bucket.upload(fileName, imageBytes, upsert = false)
-                    uploadedImageUrl = bucket.publicUrl(fileName)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Marker gespeichert!", Toast.LENGTH_SHORT).show()
+                    cancelPlacing()
                 }
-
-                // DB-Insert
-                val newMarker = buildJsonObject {
-                    put("user_id", currentUser.id)
-                    put("lat", pos.latitude)
-                    put("lon", pos.longitude)
-                    put("position", "POINT(${pos.longitude} ${pos.latitude})")
-                    put("description", description)
-                    put("color", color)
-                    if (uploadedImageUrl != null) {
-                        put("image_url", uploadedImageUrl)
-                    }
-                }
-
-                supabase.postgrest.from("markers").insert(newMarker)
-
-                Toast.makeText(context, "Marker gespeichert!", Toast.LENGTH_SHORT).show()
-                cancelPlacing()
-                loadMarkersForMap()
-
             } catch (e: Exception) {
                 Log.e("MapViewModel", "Fehler beim Speichern: ${e.message}", e)
-                Toast.makeText(context, "Fehler: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    /** Setzt den ausgewählten Marker (Wird von der UI aufgerufen). */
     fun selectMarker(marker: MarkerDto?) {
         selectedMarker = marker
     }
 
-    /** Aktualisiert die intern gespeicherte Position des Nutzers. */
+    fun deleteMarker(id: String) {
+        selectedMarker = null
+        viewModelScope.launch(Dispatchers.IO) {
+            if (::repository.isInitialized) {
+                repository.deleteMarker(id)
+            }
+        }
+    }
+
     fun updateUserPosition(position: Position) {
         userPosition = position
-
         checkFogUpdate(position)
     }
 
-    private fun distanceBetween(
-        first: Position,
-        second: Position
-    ): Float {
+    private fun distanceBetween(first: Position, second: Position): Float {
         val result = FloatArray(1)
-
         android.location.Location.distanceBetween(
             first.latitude,
             first.longitude,
@@ -206,12 +193,10 @@ class MapViewModel : ViewModel() {
             second.longitude,
             result
         )
-
         return result[0]
     }
 
     private fun checkFogUpdate(position: Position) {
-
         val lastPosition = lastFogPosition
 
         if (lastPosition == null) {
@@ -229,11 +214,12 @@ class MapViewModel : ViewModel() {
     }
 
     private fun addFogPoint(position: Position) {
-
-        viewModelScope.launch {
-
+        viewModelScope.launch(Dispatchers.IO) {
             try {
+                // 1. Lokal puffern für Offline-Sync
+                repository.recordFogPointLocally(position.latitude, position.longitude)
 
+                // 2. RPC direkt versuchen, um Nebel auf der Karte sofort aufzudecken
                 supabase.postgrest.rpc(
                     "add_fog_point",
                     buildJsonObject {
@@ -241,74 +227,42 @@ class MapViewModel : ViewModel() {
                         put("new_lon", position.longitude)
                     }
                 )
+
+                // 3. GeoJSON auf der Karte live aktualisieren
                 loadFog()
-
-                Log.d(
-                    "MapViewModel",
-                    "Fog aktualisiert: ${position.latitude}, ${position.longitude}"
-                )
-
+                Log.d("MapViewModel", "Fog live aktualisiert: ${position.latitude}, ${position.longitude}")
             } catch (e: Exception) {
-
-                Log.e(
-                    "MapViewModel",
-                    "Fehler beim Aktualisieren des Fogs",
-                    e
-                )
+                Log.e("MapViewModel", "Offline: Fog-Punkt lokal gepuffert")
             }
         }
     }
 
+    /**
+     * Lädt das aktuelle Fog-GeoJSON direkt aus Supabase.
+     */
     fun loadFog() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
+                val user = supabase.auth.currentUserOrNull() ?: return@launch
+
                 supabase.postgrest.rpc("ensure_user_fog")
-
                 val result = supabase.postgrest.rpc("get_user_fog")
-                fogGeoJson = result.data
 
-                Log.d("MapViewModel", "RPC Ergebnis: ${result.data}")
-
+                withContext(Dispatchers.Main) {
+                    fogGeoJson = result.data
+                }
             } catch (e: Exception) {
-                Log.e(
-                    "MapViewModel",
-                    "Fehler beim Laden des Fogs",
-                    e
-                )
+                Log.e("MapViewModel", "Fehler beim Laden des Fogs: ${e.message}")
             }
         }
     }
 
-    /**
-     * Lädt alle Marker aus der Supabase-Datenbank und aktualisiert die lokale [markerList].
-     */
     suspend fun loadMarkersForMap() {
-        val currentUser = supabase.auth.currentUserOrNull() ?: run {
-            Log.e("MapViewModel", "CANCELLED: Kein User in Supabase Auth angemeldet!")
-            return
-        }
-
-        try {
-            Log.d("MapViewModel", "Starte Laden der Marker für User: ${currentUser.id}...")
-
-            val rawMarkers = supabase.postgrest.from("markers")
-                .select()
-                .decodeList<MarkerDto>()
-
-            markerList.clear()
-            markerList.addAll(rawMarkers)
-
-        } catch (e: Exception) {
-            Log.e("MapViewModel", "EXCEPTION BEIM LADEN DER MARKER: ${e.message}", e)
+        if (::repository.isInitialized) {
+            repository.triggerBackgroundSync()
         }
     }
 
-    /**
-     * Aktualisiert einen bestehenden Marker.
-     *
-     * Bei Änderung des Bildes: Upload eines neuen Bildes in den Storage
-     * und Update der Datenbank-Einträge via PostgREST.
-     */
     fun updateMarkerWithImage(
         markerId: String,
         description: String,
@@ -316,49 +270,23 @@ class MapViewModel : ViewModel() {
         oldImageUrl: String?,
         newImageBytes: ByteArray?
     ) {
-        viewModelScope.launch {
+        val currentUser = supabase.auth.currentUserOrNull() ?: return
+        val currentMarker = markerList.find { it.id == markerId } ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                var finalImageUrl = oldImageUrl
-
-                // Bild-Aktualisierung
-                if (newImageBytes != null && newImageBytes.isNotEmpty()) {
-                    val fileName = "marker_${UUID.randomUUID()}.jpg"
-                    val bucket = supabase.storage.from("marker-images")
-
-                    bucket.upload(fileName, newImageBytes, upsert = true)
-                    finalImageUrl = bucket.publicUrl(fileName)
-                }
-
-                // DB-Update
-                supabase.postgrest.from("markers").update({
-                    set("description", description)
-                    set("color", color)
-                    set("image_url", finalImageUrl)
-                }) {
-                    filter {
-                        eq("id", markerId)
-                    }
-                }
-
-                loadMarkersForMap()
-
+                repository.saveMarkerLocally(
+                    userId = currentUser.id,
+                    lat = currentMarker.lat,
+                    lon = currentMarker.lon,
+                    desc = description,
+                    color = color,
+                    imageBytes = newImageBytes,
+                    existingImageUrl = oldImageUrl,
+                    markerId = markerId
+                )
             } catch (e: Exception) {
-                Log.e("MapViewModel", "Fehler beim Aktualisieren des Markers", e)
-            }
-        }
-    }
-
-    /** Löscht einen Marker dauerhaft aus der Datenbank anhand seiner ID. */
-    fun deleteMarker(id: String) {
-        viewModelScope.launch {
-            try {
-                supabase.postgrest.from("markers").delete {
-                    filter { eq("id", id) }
-                }
-                selectedMarker = null
-                loadMarkersForMap()
-            } catch (e: Exception) {
-                Log.e("MapViewModel", "Fehler beim Löschen: ${e.message}")
+                Log.e("MapViewModel", "Fehler beim Aktualisieren: ${e.message}", e)
             }
         }
     }

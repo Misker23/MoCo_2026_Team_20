@@ -1,13 +1,17 @@
 package com.example.ap2.auth
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.ap2.supabase
+import com.example.ap2.utils.UserPreferences
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -36,6 +40,8 @@ class AuthViewModel : ViewModel() {
     /** Ladeindikator für asynchrone Netzwerk-Anfragen. */
     var isLoading by mutableStateOf(false)
 
+    var usernameInput by mutableStateOf("")
+
     /**
      * Führt je nach [isSignUpMode] entweder eine Registrierung oder einen Login über Supabase durch.
      *
@@ -44,6 +50,30 @@ class AuthViewModel : ViewModel() {
      *
      * @param onSuccess Callback, der nach erfolgreicher Authentifizierung ausgeführt wird (z. B. Navigation).
      */
+
+    fun loadSavedUsername(context: Context) {
+        viewModelScope.launch {
+            UserPreferences(context).lastUsernameFlow.collect { savedName ->
+                if (usernameInput.isEmpty()) {
+                    usernameInput = savedName
+                }
+            }
+        }
+    }
+
+    fun checkOfflineOrOnlineSession(onAutoLoginSuccess: () -> Unit, onLoginRequired: () -> Unit) {
+        viewModelScope.launch {
+            val cachedUser = supabase.auth.currentUserOrNull()
+
+            if (cachedUser != null) {
+                // Nutzer war bereits angemeldet -> direkt in die App weiterleiten!
+                onAutoLoginSuccess()
+            } else {
+                // Keine lokale Session vorhanden -> Login-Screen zeigen
+                onLoginRequired()
+            }
+        }
+    }
     suspend fun handleAuth(onSuccess: () -> Unit) {
         if (email.isBlank() || password.isBlank()) {
             errorMessage = "Bitte E-Mail und Passwort eingeben."
@@ -83,4 +113,12 @@ class AuthViewModel : ViewModel() {
             Log.e("Auth", "Fehler bei Authentifizierung: ${e.message}")
         }
     }
+
+    fun onLoginSuccess(context: Context, usernameOrEmail: String) {
+        viewModelScope.launch {
+            UserPreferences(context).saveLastUsername(usernameOrEmail)
+        }
+    }
+
+
 }

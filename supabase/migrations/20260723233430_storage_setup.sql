@@ -3,7 +3,6 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('marker-images', 'marker-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
-
 -- Storage Policies
 DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated Upload" ON storage.objects;

@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -35,6 +37,9 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }
 
@@ -79,4 +84,15 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+// Room Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // WorkManager für Hintergrund-Synchronisation
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-rxjava2:2.9.0")
 }

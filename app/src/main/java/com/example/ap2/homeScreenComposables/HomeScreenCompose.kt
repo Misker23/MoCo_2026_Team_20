@@ -29,16 +29,6 @@ import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.spatialk.geojson.Position
 
-/**
- * Detail- und Bearbeitungsdialog für einen ausgewählten Marker.
- * Bietet die Möglichkeit, Beschreibung, Marker-Farbe sowie ein Bild hochzuladen oder den Marker zu löschen.
- *
- * @param bottomPadding Abstand nach unten (z. B. für die Navigation-Bar).
- * @param markerDto Das zu bearbeitende Marker-Objekt.
- * @param onDismiss Callback zum Schließen des Popups.
- * @param onSave Callback zum Speichern mit geänderter Beschreibung, Farbe und optionalen Bild-Bytes.
- * @param onDelete Callback zum endgültigen Löschen des Markers aus der Datenbank.
- */
 @Composable
 fun HomeScreen(
     viewModel: MapViewModel = viewModel(),
@@ -56,15 +46,14 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // 1. Initialisierung Sensoren & Daten-Upload
+    // 1. Initialisierung Sensoren
     val motionRepo = remember { MotionRepository(context) }
     var steps by remember { mutableFloatStateOf(0f) }
     var compassDegree by remember { mutableFloatStateOf(0f) }
 
-    // 2. Initialer Start: Marker laden & Sensoren abonnieren
+    // 2. Initialer Start: Repository laden & Sensoren abonnieren
     LaunchedEffect(Unit) {
-        // Marker aus Supabase laden
-        viewModel.loadMarkersForMap()
+        viewModel.initRepository(context)
 
         // Schritte sammeln
         launch {
@@ -79,9 +68,10 @@ fun HomeScreen(
                 compassDegree = azimuth
             }
         }
+
+        viewModel.loadMarkersForMap()
     }
 
-    var markerPosition by remember { mutableStateOf<Position?>(null) }
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
     var isPoiWindowVisable by remember { mutableStateOf(false) }
     var isSettingWindowVisable by remember { mutableStateOf(false) }
@@ -139,12 +129,11 @@ fun HomeScreen(
                 viewModel = viewModel,
                 camera = camera,
                 onMapClick = { pos ->
-                    markerPosition = pos
+                    viewModel.handleMapClick(pos)
                     isSneakPeekVisible = false
                     isMarkerWindowVisable = false
                 },
                 onMarkerClick = { clickedMarker ->
-                    // Setzt den gewählten Marker im ViewModel und öffnet die Vorschau
                     viewModel.selectMarker(clickedMarker)
                     isSneakPeekVisible = true
                 }
@@ -196,8 +185,8 @@ fun HomeScreen(
                 }
             }
 
-            // PLATZIERUNGS-MODUS OVERLAY (Wenn neuer Marker gesetzt werden soll)
-            if (viewModel.currentMode == MapMode.PLACING_MARKER) {
+            // PLATZIERUNGS-MODUS OVERLAY
+            if (viewModel.currentMode == MapMode.CONFIRMING || viewModel.currentMode == MapMode.PLACING_MARKER) {
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -207,22 +196,24 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { viewModel.resetMode() }) {
+                    IconButton(onClick = { viewModel.cancelPlacing() }) {
                         Icon(Icons.Default.Close, contentDescription = "Abbrechen", tint = Color.Red)
                     }
 
-                    Text("Marker-Position wählen", color = Color.White, fontSize = 14.sp)
+                    Text(
+                        text = if (viewModel.currentMode == MapMode.CONFIRMING) "Position gewählt" else "Marker-Position wählen",
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
 
-                    IconButton(
-                        onClick = {
-                            // Erstellt einen Marker an der aktuellen Kamera/Klick-Position
-                            markerPosition?.let { pos ->
-                                // hier kann deine Methode zum Speichern aufgerufen werden
+                    if (viewModel.currentMode == MapMode.CONFIRMING) {
+                        IconButton(
+                            onClick = {
+                                viewModel.confirmMarker(context)
                             }
-                            viewModel.resetMode()
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = "Bestätigen", tint = Color.Green)
                         }
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "Bestätigen", tint = Color.Green)
                     }
                 }
             }
@@ -254,10 +245,10 @@ fun HomeScreen(
                     onSave = { updatedDescription, updatedColor, newImageBytes ->
                         viewModel.selectedMarker?.let { currentMarker ->
                             viewModel.updateMarkerWithImage(
-                                markerId = currentMarker.id ?: "",      // War vorher 'id'
-                                description = updatedDescription,       // War vorher 'newDescription'
-                                color = updatedColor,                   // War vorher 'newColor'
-                                oldImageUrl = currentMarker.image_url,  // Kann direkt String? sein
+                                markerId = currentMarker.id ?: "",
+                                description = updatedDescription,
+                                color = updatedColor,
+                                oldImageUrl = currentMarker.image_url,
                                 newImageBytes = newImageBytes
                             )
                         }
@@ -265,6 +256,8 @@ fun HomeScreen(
                     onDelete = {
                         viewModel.selectedMarker?.let { currentMarker ->
                             viewModel.deleteMarker(currentMarker.id ?: "")
+                            isMarkerWindowVisable = false
+                            isSneakPeekVisible = false
                         }
                     }
                 )
