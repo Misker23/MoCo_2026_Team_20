@@ -114,13 +114,22 @@ CREATE OR REPLACE FUNCTION public.add_fog_point(new_lat double precision, new_lo
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public'
 AS $function$
+DECLARE
+    new_area geometry;
 BEGIN
-    UPDATE user_fog
-    SET fog_polygon = ST_Union(
-        fog_polygon,
-        -- Zieht einen 100 Meter Radius um die neue Koordinate
-        ST_Buffer(ST_SetSRID(ST_MakePoint(new_lon, new_lat), 4326)::geography, 50)::geometry
+    new_area := ST_Buffer(
+        ST_SetSRID(ST_MakePoint(new_lon, new_lat), 4326)::geography,
+        50
+    )::geometry;
+
+    UPDATE public.user_fog
+    SET fog_polygon = ST_Multi(
+        ST_Union(
+            COALESCE(fog_polygon, ST_GeomFromText('MULTIPOLYGON EMPTY', 4326)),
+            new_area
+        )
     )
     WHERE user_id = auth.uid();
 END;
@@ -136,8 +145,8 @@ AS $function$
 BEGIN
   INSERT INTO markers (user_id, position, description, color, image_url)
   VALUES (
-    user_id, 
-    ST_SetSRID(ST_MakePoint(lon, lat), 4326), 
+    user_id,
+    ST_SetSRID(ST_MakePoint(lon, lat), 4326),
     description,
     color,
     image_url
@@ -146,6 +155,42 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.ensure_user_fog()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    INSERT INTO public.user_fog (user_id)
+    VALUES (auth.uid())
+    ON CONFLICT (user_id) DO NOTHING;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_user_fog()
+ RETURNS json
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+    SELECT COALESCE(
+        ST_AsGeoJSON(
+            ST_Difference(
+                ST_Buffer(
+                    ST_SetSRID(ST_MakePoint(7.5648, 51.0264), 4326)::geography,
+                    70000
+                )::geometry,
+                COALESCE(fog_polygon, ST_GeomFromText('MULTIPOLYGON EMPTY', 4326))
+            )
+        )::json,
+        '{}'::json
+    )
+    FROM public.user_fog
+    WHERE user_id = auth.uid();
+$function$
+;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
@@ -156,7 +201,6 @@ begin
   insert into public.profiles (id, username)
   values (
     new.id,
-    -- Nutzt den übergebenen 'username' aus den Meta-Daten oder den Teil vor dem '@' der E-Mail
     coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))
   );
   return new;
@@ -171,9 +215,9 @@ CREATE OR REPLACE FUNCTION public.is_marker_owner(p_marker_id uuid, p_user_id uu
  SET search_path TO 'public'
 AS $function$
   SELECT EXISTS (
-    SELECT 1 
-    FROM public.markers 
-    WHERE id = p_marker_id 
+    SELECT 1
+    FROM public.markers
+    WHERE id = p_marker_id
       AND user_id = p_user_id
   );
 $function$
@@ -186,259 +230,59 @@ CREATE OR REPLACE FUNCTION public.is_marker_shared_with_user(p_marker_id uuid, p
  SET search_path TO 'public'
 AS $function$
   SELECT EXISTS (
-    SELECT 1 
-    FROM public.shared_markers 
-    WHERE marker_id = p_marker_id 
+    SELECT 1
+    FROM public.shared_markers
+    WHERE marker_id = p_marker_id
       AND friend_user_id = p_user_id
   );
 $function$
 ;
 
-
-grant references on table "public"."friendships" to "anon";
-
-grant trigger on table "public"."friendships" to "anon";
-
-grant truncate on table "public"."friendships" to "anon";
-
 grant delete on table "public"."friendships" to "authenticated";
 
 grant insert on table "public"."friendships" to "authenticated";
 
-grant references on table "public"."friendships" to "authenticated";
-
 grant select on table "public"."friendships" to "authenticated";
 
-grant trigger on table "public"."friendships" to "authenticated";
-
-grant truncate on table "public"."friendships" to "authenticated";
-
 grant update on table "public"."friendships" to "authenticated";
-
-grant references on table "public"."friendships" to "service_role";
-
-grant trigger on table "public"."friendships" to "service_role";
-
-grant truncate on table "public"."friendships" to "service_role";
-
-grant delete on table "public"."markers" to "anon";
-
-grant references on table "public"."markers" to "anon";
-
-grant trigger on table "public"."markers" to "anon";
-
-grant truncate on table "public"."markers" to "anon";
-
-grant update on table "public"."markers" to "anon";
 
 grant delete on table "public"."markers" to "authenticated";
 
 grant insert on table "public"."markers" to "authenticated";
 
-grant references on table "public"."markers" to "authenticated";
-
 grant select on table "public"."markers" to "authenticated";
 
-grant trigger on table "public"."markers" to "authenticated";
-
-grant truncate on table "public"."markers" to "authenticated";
-
 grant update on table "public"."markers" to "authenticated";
-
-grant references on table "public"."markers" to "service_role";
-
-grant trigger on table "public"."markers" to "service_role";
-
-grant truncate on table "public"."markers" to "service_role";
-
-grant references on table "public"."profiles" to "anon";
-
-grant trigger on table "public"."profiles" to "anon";
-
-grant truncate on table "public"."profiles" to "anon";
 
 grant delete on table "public"."profiles" to "authenticated";
 
 grant insert on table "public"."profiles" to "authenticated";
 
-grant references on table "public"."profiles" to "authenticated";
-
 grant select on table "public"."profiles" to "authenticated";
 
-grant trigger on table "public"."profiles" to "authenticated";
-
-grant truncate on table "public"."profiles" to "authenticated";
-
 grant update on table "public"."profiles" to "authenticated";
-
-grant references on table "public"."profiles" to "service_role";
-
-grant trigger on table "public"."profiles" to "service_role";
-
-grant truncate on table "public"."profiles" to "service_role";
-
-grant references on table "public"."shared_markers" to "anon";
-
-grant trigger on table "public"."shared_markers" to "anon";
-
-grant truncate on table "public"."shared_markers" to "anon";
 
 grant delete on table "public"."shared_markers" to "authenticated";
 
 grant insert on table "public"."shared_markers" to "authenticated";
 
-grant references on table "public"."shared_markers" to "authenticated";
-
 grant select on table "public"."shared_markers" to "authenticated";
-
-grant trigger on table "public"."shared_markers" to "authenticated";
-
-grant truncate on table "public"."shared_markers" to "authenticated";
 
 grant update on table "public"."shared_markers" to "authenticated";
 
-grant references on table "public"."shared_markers" to "service_role";
+grant delete on table "public"."user_fog" to "authenticated";
 
-grant trigger on table "public"."shared_markers" to "service_role";
+grant insert on table "public"."user_fog" to "authenticated";
 
-grant truncate on table "public"."shared_markers" to "service_role";
+grant select on table "public"."user_fog" to "authenticated";
 
-grant delete on table "public"."spatial_ref_sys" to "anon";
+grant update on table "public"."user_fog" to "authenticated";
 
-grant insert on table "public"."spatial_ref_sys" to "anon";
+grant execute on function public.add_fog_point(double precision, double precision) to "authenticated";
 
-grant references on table "public"."spatial_ref_sys" to "anon";
+grant execute on function public.ensure_user_fog() to "authenticated";
 
-grant select on table "public"."spatial_ref_sys" to "anon";
-
-grant trigger on table "public"."spatial_ref_sys" to "anon";
-
-grant truncate on table "public"."spatial_ref_sys" to "anon";
-
-grant update on table "public"."spatial_ref_sys" to "anon";
-
-grant delete on table "public"."spatial_ref_sys" to "authenticated";
-
-grant insert on table "public"."spatial_ref_sys" to "authenticated";
-
-grant references on table "public"."spatial_ref_sys" to "authenticated";
-
-grant select on table "public"."spatial_ref_sys" to "authenticated";
-
-grant trigger on table "public"."spatial_ref_sys" to "authenticated";
-
-grant truncate on table "public"."spatial_ref_sys" to "authenticated";
-
-grant update on table "public"."spatial_ref_sys" to "authenticated";
-
-grant delete on table "public"."spatial_ref_sys" to "postgres";
-
-grant insert on table "public"."spatial_ref_sys" to "postgres";
-
-grant references on table "public"."spatial_ref_sys" to "postgres";
-
-grant select on table "public"."spatial_ref_sys" to "postgres";
-
-grant trigger on table "public"."spatial_ref_sys" to "postgres";
-
-grant truncate on table "public"."spatial_ref_sys" to "postgres";
-
-grant update on table "public"."spatial_ref_sys" to "postgres";
-
-grant delete on table "public"."spatial_ref_sys" to "service_role";
-
-grant insert on table "public"."spatial_ref_sys" to "service_role";
-
-grant references on table "public"."spatial_ref_sys" to "service_role";
-
-grant select on table "public"."spatial_ref_sys" to "service_role";
-
-grant trigger on table "public"."spatial_ref_sys" to "service_role";
-
-grant truncate on table "public"."spatial_ref_sys" to "service_role";
-
-grant update on table "public"."spatial_ref_sys" to "service_role";
-
-grant references on table "public"."user_fog" to "anon";
-
-grant trigger on table "public"."user_fog" to "anon";
-
-grant truncate on table "public"."user_fog" to "anon";
-
-grant references on table "public"."user_fog" to "authenticated";
-
-grant trigger on table "public"."user_fog" to "authenticated";
-
-grant truncate on table "public"."user_fog" to "authenticated";
-
-grant references on table "public"."user_fog" to "service_role";
-
-grant trigger on table "public"."user_fog" to "service_role";
-
-grant truncate on table "public"."user_fog" to "service_role";
-
-
-  create policy "Eigene Freundschaften lesen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using ((auth.uid() = user_id));
-
-
-
-  create policy "Freundschaften anlegen"
-  on "public"."friendships"
-  as permissive
-  for insert
-  to authenticated
-with check ((auth.uid() = user_id));
-
-
-
-  create policy "Freundschaften lesen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Freundschaften löschen"
-  on "public"."friendships"
-  as permissive
-  for delete
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Nutzer können Freundschaften anlegen"
-  on "public"."friendships"
-  as permissive
-  for insert
-  to authenticated
-with check ((auth.uid() = user_id));
-
-
-
-  create policy "Nutzer können eigene Freundschaften löschen"
-  on "public"."friendships"
-  as permissive
-  for delete
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Nutzer können eigene Freundschaften sehen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
+grant execute on function public.get_user_fog() to "authenticated";
 
 
   create policy "friendships_delete_policy"
@@ -446,7 +290,7 @@ using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
   as permissive
   for delete
   to authenticated
-using ((user_id = auth.uid()));
+using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
 
 
@@ -464,7 +308,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for select
   to authenticated
-using ((user_id = auth.uid()));
+using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
 
 
@@ -510,15 +354,6 @@ using (((user_id = auth.uid()) OR public.is_marker_shared_with_user(id, auth.uid
   for update
   to authenticated
 using ((user_id = auth.uid()));
-
-
-
-  create policy "Profile sind lesbar"
-  on "public"."profiles"
-  as permissive
-  for select
-  to authenticated
-using (true);
 
 
 
@@ -571,7 +406,7 @@ using (((friend_user_id = auth.uid()) OR public.is_marker_owner(marker_id, auth.
   on "public"."user_fog"
   as permissive
   for update
-  to public
+  to authenticated
 using ((auth.uid() = user_id));
 
 
@@ -580,44 +415,22 @@ using ((auth.uid() = user_id));
   on "public"."user_fog"
   as permissive
   for select
-  to public
+  to authenticated
 using ((auth.uid() = user_id));
 
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 
-  create policy "Allow Uploads 1ajgacr_0"
-  on "storage"."objects"
-  as permissive
-  for insert
-  to public
-with check ((bucket_id = 'marker-images'::text));
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('marker-images', 'marker-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
 
 
-
-  create policy "Allow Uploads 1ajgacr_1"
-  on "storage"."objects"
-  as permissive
-  for update
-  to public
-using ((bucket_id = 'marker-images'::text));
-
-
-
-  create policy "Allow Uploads 1ajgacr_2"
+  create policy "Public Read Access"
   on "storage"."objects"
   as permissive
   for select
-  to public
-using ((bucket_id = 'marker-images'::text));
-
-
-
-  create policy "Allow Uploads 1ajgacr_3"
-  on "storage"."objects"
-  as permissive
-  for delete
   to public
 using ((bucket_id = 'marker-images'::text));
 
@@ -638,15 +451,3 @@ with check ((bucket_id = 'marker-images'::text));
   for delete
   to authenticated
 using (((bucket_id = 'marker-images'::text) AND (auth.uid() = owner)));
-
-
-
-  create policy "Public Read Access"
-  on "storage"."objects"
-  as permissive
-  for select
-  to public
-using ((bucket_id = 'marker-images'::text));
-
-
-
