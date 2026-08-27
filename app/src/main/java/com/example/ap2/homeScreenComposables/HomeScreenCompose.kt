@@ -1,5 +1,7 @@
 package com.example.ap2.homeScreenComposables
 
+import android.content.Context
+import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,10 +12,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,9 +59,12 @@ fun HomeScreen(
     )
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val windowManager =
+        remember { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
 
     // 1. Initialisierung Sensoren & Daten-Upload
     val motionRepo = remember { MotionRepository(context) }
+    var rotationData by remember { mutableStateOf(floatArrayOf(0f, 0f, 0f, 0f)) }
     var steps by remember { mutableFloatStateOf(0f) }
     var compassDegree by remember { mutableFloatStateOf(0f) }
 
@@ -66,17 +73,27 @@ fun HomeScreen(
         // Marker aus Supabase laden
         viewModel.loadMarkersForMap()
 
-        // Schritte sammeln
-        launch {
-            motionRepo.getStepCountUpdates().collect { newSteps ->
-                steps = newSteps
-            }
-        }
 
+//        // Schritte sammeln
+//        launch {
+//            motionRepo.getStepCountUpdates().collect { newSteps ->
+//                steps = newSteps
+//            }
+//        }
+//
         // Kompass sammeln
         launch {
-            motionRepo.getCompassUpdates().collect { azimuth ->
-                compassDegree = azimuth
+            motionRepo.getRotationUpdates().collect { azimuth ->
+                val rotation = windowManager.defaultDisplay.rotation
+                val rotationDegrees = when (rotation) {
+                    android.view.Surface.ROTATION_90 -> 90f
+                    android.view.Surface.ROTATION_180 -> 180f
+                    android.view.Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+                val correctedBearing = (-(azimuth + rotationDegrees) + 360) % 360
+                compassDegree = correctedBearing
+                viewModel.userBearing = correctedBearing
             }
         }
     }
@@ -97,21 +114,39 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                POIButton(
-                    onClick = { isPoiWindowVisable = true },
-                    modifier = Modifier.weight(1f)
-                )
-                FriendsButton(
-                    onClick = { onNavigateToFriends() },
-                    modifier = Modifier.weight(1f)
-                )
-                SettingButton(
-                    onClick = { isSettingWindowVisable = true },
-                    modifier = Modifier.weight(1f)
-                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    POIButton(
+                        onClick = {isPoiWindowVisable = true},
+                        modifier = Modifier.background(Color.Black.copy(alpha = 0.15f))
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    FriendsButton(
+                        onClick = {onNavigateToFriends()},
+                        modifier = Modifier.background(Color.Black.copy(alpha = 0.15f))
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SettingButton(
+                        onClick = {isSettingWindowVisable = true},
+                        modifier = Modifier
+                    )
+                }
+
             }
         },
 
@@ -154,76 +189,25 @@ fun HomeScreen(
             if (viewModel.currentMode == MapMode.DEFAULT) {
                 ProfileButton(
                     onLogout = onLogout,
-                    modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                    modifier = Modifier
                 )
             }
 
-            // KOMPASS & SCHRITTE
+            // SCHRITTE
             if (viewModel.currentMode == MapMode.DEFAULT) {
-                Column(
+                Box(
                     modifier = Modifier
+                        .size(width = 150.dp, height = 60.dp)
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Schritte: ${steps.toInt()}",
-                        color = Color.White,
+                        text = "Schritte: ${viewModel.stepsFromDistance}",
+                        color = Color.Black,
                         style = MaterialTheme.typography.bodyMedium
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_place_24),
-                        contentDescription = "Kompass",
-                        tint = Color.Red,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .rotate(-compassDegree)
-                    )
-
-                    Text(
-                        text = "${compassDegree.toInt()}°",
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-
-            // PLATZIERUNGS-MODUS OVERLAY (Wenn neuer Marker gesetzt werden soll)
-            if (viewModel.currentMode == MapMode.PLACING_MARKER) {
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(24.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { viewModel.resetMode() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Abbrechen", tint = Color.Red)
-                    }
-
-                    Text("Marker-Position wählen", color = Color.White, fontSize = 14.sp)
-
-                    IconButton(
-                        onClick = {
-                            // Erstellt einen Marker an der aktuellen Kamera/Klick-Position
-                            markerPosition?.let { pos ->
-                                // hier kann deine Methode zum Speichern aufgerufen werden
-                            }
-                            viewModel.resetMode()
-                        }
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "Bestätigen", tint = Color.Green)
-                    }
                 }
             }
 

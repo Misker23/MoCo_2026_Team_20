@@ -53,7 +53,7 @@ fun AuthScreenCompose(
             )
 
             Text(
-                text = if (viewModel.isSignUpMode) "Melde dich an, um Marker & Freunde zu teilen" else "Gib deine Daten ein, um fortzufahren",
+                text = if (viewModel.isSignUpMode) "Registriere dich an um die Umgebung zu erkunden und um Marker mit Freunden zu teilen" else "Gebe deine Daten ein, um fortzufahren",
                 color = Color.Gray,
                 fontSize = 14.sp
             )

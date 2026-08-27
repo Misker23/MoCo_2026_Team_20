@@ -79,6 +79,19 @@ class MapViewModel : ViewModel() {
     var isFollowingUser by mutableStateOf(false)
         private set
 
+    // Gesamt Distanz zurückgelegt
+    var totalDistance by mutableStateOf(0f)
+    private var lastStepPosition: Position? = null
+
+    // Durchschnittliche Schrittlänge in Meter
+    private val stepLength = 0.75f
+
+    val stepsFromDistance: Int
+        get() = (totalDistance / stepLength).toInt()
+
+    // für die Blickrichtung
+    var userBearing by mutableStateOf(0f)
+
     // --- MAP STEUERUNG ---
 
     /**
@@ -188,8 +201,15 @@ class MapViewModel : ViewModel() {
 
     /** Aktualisiert die intern gespeicherte Position des Nutzers. */
     fun updateUserPosition(position: Position) {
+        val previousPosition = userPosition                             // Code hinzugefügt, der den Stepcounter über Distanz ausrechnet
         userPosition = position
 
+        val distanceMoved = distanceBetween(previousPosition, position)
+
+        if(distanceMoved > 2.0f) {
+            totalDistance += distanceMoved
+        }
+                                                                        // bis hier hin
         checkFogUpdate(position)
     }
 

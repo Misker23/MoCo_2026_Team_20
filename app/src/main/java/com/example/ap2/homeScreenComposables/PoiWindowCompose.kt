@@ -71,7 +71,7 @@ fun POIWindow(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
                 .size(360.dp, 520.dp) // Leicht vergrößert für besseren Formfaktor
-                .background(Color(0xFF1A1A1A).copy(alpha = 0.96f), RoundedCornerShape(24.dp)) // Modernere, rundere Ecken
+                .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(24.dp)) // Modernere, rundere Ecken
                 .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,7 +86,7 @@ fun POIWindow(
 
             Text(
                 text = "Points of Interest",
-                color = Color.White,
+                color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -100,9 +100,9 @@ fun POIWindow(
                     val isSelected = selectedCategory == category
                     SuggestionChip(
                         onClick = { selectedCategory = category },
-                        label = { Text(category, color = if (isSelected) Color.Black else Color.White, fontWeight = FontWeight.Medium) },
+                        label = { Text(category, color = if (isSelected) Color.LightGray else Color.DarkGray, fontWeight = FontWeight.Medium) },
                         colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = if (isSelected) Color.White else Color(0xFF2D2D2D)
+                            containerColor = if (isSelected) Color.DarkGray else Color.LightGray
                         ),
                         border = BorderStroke(
                             width = 1.dp,
@@ -166,7 +166,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.07f)), // Dezenterer Kontrast
+        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.07f)), // Dezenterer Kontrast
         shape = RoundedCornerShape(14.dp) // Weichere Kanten für die Karten
     ) {
         Row(
@@ -190,7 +190,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
                 ) {
                     Text(
                         text = marker.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Namen",
-                        color = Color.White,
+                        color = Color.Black,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         maxLines = 1,
@@ -202,7 +202,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
 
                     Text(
                         text = distanceText,
-                        color = Color.LightGray,
+                        color = Color.Gray,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1 // Verhindert vertikales Umbrechen komplett

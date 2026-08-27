@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +35,8 @@ fun FriendsScreenCompose(
     val coroutineScope = rememberCoroutineScope()
     var showAddDialog by remember { mutableStateOf(false) }
     var friendForSharing by remember { mutableStateOf<FriendDto?>(null) }
+    val searchText by viewModel.searchText.collectAsState()
+    val filteredFriends by viewModel.filteredFriends.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchFriends()
@@ -44,7 +47,7 @@ fun FriendsScreenCompose(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A))
+            .background(Color.White)
             .systemBarsPadding()
             .padding(16.dp)
     ) {
@@ -64,13 +67,13 @@ fun FriendsScreenCompose(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Zurück zum Hauptbildschirm",
-                        tint = Color.White
+                        tint = Color.Black
                     )
                 }
 
                 Text(
                     text = "Deine Freunde",
-                    color = Color.White,
+                    color = Color.Black,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -86,6 +89,18 @@ fun FriendsScreenCompose(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(
+                value = searchText,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                placeholder = { Text("Suche") },
+                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // --- FRIENDS LISTE / EMPTY STATE ---
             if (viewModel.friendsList.isEmpty()) {
                 Box(
@@ -94,7 +109,7 @@ fun FriendsScreenCompose(
                 ) {
                     Text(
                         text = "Du hast noch keine Freunde hinzugefügt.",
-                        color = Color.Gray,
+                        color = Color.DarkGray,
                         fontSize = 14.sp
                     )
                 }
@@ -103,7 +118,7 @@ fun FriendsScreenCompose(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(viewModel.friendsList) { friend: FriendDto ->
+                    items(filteredFriends) { friend: FriendDto ->
                         FriendCardItem(
                             friend = friend,
                             onShare = {
@@ -167,7 +182,7 @@ fun FriendCardItem(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.07f)),
+        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.07f)),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -202,7 +217,7 @@ fun FriendCardItem(
                 Column {
                     Text(
                         text = friend.displayName,
-                        color = Color.White,
+                        color = Color.Black,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp
                     )

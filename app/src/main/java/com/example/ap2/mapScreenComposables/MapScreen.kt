@@ -1,5 +1,8 @@
 package com.example.ap2.mapScreenComposables
 
+import org.maplibre.compose.location.BearingWithAccuracy
+import org.maplibre.spatialk.units.Bearing
+import org.maplibre.spatialk.units.extensions.degrees
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Box
@@ -154,10 +157,15 @@ fun MapScreen(
                     )
                 }
 
+                val userBearingWithAccuracy = remember(viewModel.userBearing) {
+                    val bearing = Bearing.North + viewModel.userBearing.toDouble().degrees
+                    BearingWithAccuracy(bearing, null)
+                }
+
                 LocationPuck(
                     idPrefix = "user",
                     location = locationState.location,
-                    bearing = locationState.mostAccurateBearing(),
+                    bearing = userBearingWithAccuracy,
                     cameraState = camera
                 )
 
