@@ -82,6 +82,8 @@ alter table "public"."friendships" add constraint "friendships_friend_id_fkey" F
 
 alter table "public"."friendships" validate constraint "friendships_friend_id_fkey";
 
+alter table "public"."friendships" add constraint "friendships_user_profile_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
 alter table "public"."friendships" add constraint "friendships_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
 
 alter table "public"."friendships" validate constraint "friendships_user_id_fkey";
@@ -377,104 +379,55 @@ grant trigger on table "public"."user_fog" to "service_role";
 
 grant truncate on table "public"."user_fog" to "service_role";
 
+-- ============================================
+-- FRIENDSHIPS
+-- ============================================
 
-  create policy "Eigene Freundschaften lesen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using ((auth.uid() = user_id));
+-- Eigene Freundschaften und eingehende Anfragen lesen
+CREATE POLICY "friendships_select_policy"
+ON public.friendships
+FOR SELECT
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
 
+-- Freundschaftsanfragen erstellen:
+-- Der eingeloggte Nutzer muss der Absender sein.
+CREATE POLICY "friendships_insert_policy"
+ON public.friendships
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    user_id = auth.uid()
+);
 
+-- Freundschaftsanfrage annehmen:
+-- Sowohl Absender als auch Empfänger dürfen den Status ändern.
+CREATE POLICY "friendships_update_policy"
+ON public.friendships
+FOR UPDATE
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+)
+WITH CHECK (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
 
-  create policy "Freundschaften anlegen"
-  on "public"."friendships"
-  as permissive
-  for insert
-  to authenticated
-with check ((auth.uid() = user_id));
-
-
-
-  create policy "Freundschaften lesen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Freundschaften löschen"
-  on "public"."friendships"
-  as permissive
-  for delete
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Nutzer können Freundschaften anlegen"
-  on "public"."friendships"
-  as permissive
-  for insert
-  to authenticated
-with check ((auth.uid() = user_id));
-
-
-
-  create policy "Nutzer können eigene Freundschaften löschen"
-  on "public"."friendships"
-  as permissive
-  for delete
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "Nutzer können eigene Freundschaften sehen"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
-
-
-
-  create policy "friendships_delete_policy"
-  on "public"."friendships"
-  as permissive
-  for delete
-  to authenticated
-using ((user_id = auth.uid()));
-
-
-
-  create policy "friendships_insert_policy"
-  on "public"."friendships"
-  as permissive
-  for insert
-  to authenticated
-with check ((user_id = auth.uid()));
-
-
-
-  create policy "friendships_select_policy"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using ((user_id = auth.uid()));
-
-
-
-  create policy "friendships_update_policy"
-  on "public"."friendships"
-  as permissive
-  for update
-  to authenticated
-using ((user_id = auth.uid()));
-
+-- Freundschaftsanfrage/Freundschaft löschen:
+-- Beide Beteiligten dürfen sie löschen.
+CREATE POLICY "friendships_delete_policy"
+ON public.friendships
+FOR DELETE
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
 
 
   create policy "markers_delete_policy"

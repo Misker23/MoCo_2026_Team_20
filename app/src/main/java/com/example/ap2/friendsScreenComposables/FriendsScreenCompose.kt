@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import com.example.ap2.data_models.FriendDto
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 
 @Composable
 fun FriendsScreenCompose(
@@ -37,6 +39,9 @@ fun FriendsScreenCompose(
 
     LaunchedEffect(Unit) {
         viewModel.fetchFriends()
+        viewModel.fetchFriendRequests()
+        viewModel.fetchSentFriendRequests()
+        viewModel.fetchPendingRequests()
         viewModel.fetchMyMarkers() // Lädt eigene Marker für den Freigabe-Dialog
     }
 
@@ -86,24 +91,96 @@ fun FriendsScreenCompose(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- FRIENDS LISTE / EMPTY STATE ---
-            if (viewModel.friendsList.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+            // --- FREUNDSCHAFTSANFRAGEN + FREUNDESLISTE ---
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+
+                // Freundschaftsanfragen ganz oben
+                if (viewModel.friendRequests.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Freundschaftsanfragen",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(viewModel.friendRequests) { request ->
+
+                        FriendRequestItem(
+                            request = request,
+                            onAccept = {
+                                coroutineScope.launch {
+                                    viewModel.acceptFriendRequest(request.user_id!!)
+                                }
+                            },
+                            onReject = {
+                                coroutineScope.launch {
+                                    viewModel.rejectFriendRequest(request.user_id!!)
+                                }
+                            }
+                        )
+                    }
+                }
+
+                if (viewModel.sentFriendRequests.isNotEmpty()) {
+
+                    item {
+                        Text(
+                            text = "Ausstehende Anfragen",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(
+                                top = 16.dp,
+                                bottom = 8.dp
+                            )
+                        )
+                    }
+
+                    items(viewModel.sentFriendRequests) { request ->
+
+                        SentFriendRequestItem(
+                            request = request,
+                            onCancel = {
+                                coroutineScope.launch {
+                                    viewModel.cancelFriendRequest(request.friend_id)
+                                }
+                            }
+                        )
+                    }
+                }
+
+                // Überschrift für Freunde
+                item {
                     Text(
-                        text = "Du hast noch keine Freunde hinzugefügt.",
-                        color = Color.Gray,
-                        fontSize = 14.sp
+                        text = "Deine Freunde",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(
+                            top = 16.dp,
+                            bottom = 8.dp
+                        )
                     )
                 }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+
+                // Freunde
+                if (viewModel.friendsList.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Du hast noch keine Freunde.",
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
+                } else {
                     items(viewModel.friendsList) { friend: FriendDto ->
+
                         FriendCardItem(
                             friend = friend,
                             onShare = {
@@ -232,6 +309,123 @@ fun FriendCardItem(
                         tint = Color(0xFFD32F2F)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun FriendRequestItem(
+    request: FriendDto,
+    onAccept: () -> Unit,
+    onReject: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.07f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+
+            Text(
+                text = "${request.displayName} möchte mit dir befreundet sein.",
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Annehmen"
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text("Annehmen")
+                }
+
+                OutlinedButton(
+                    onClick = onReject,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Ablehnen"
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text("Ablehnen")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SentFriendRequestItem(
+    request: FriendDto,
+    onCancel: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.07f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+
+            Text(
+                text = "Anfrage an ${request.displayName}",
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Wartet auf Annahme",
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Anfrage abbrechen"
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text("Anfrage abbrechen")
             }
         }
     }
