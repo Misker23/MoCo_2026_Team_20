@@ -153,7 +153,7 @@ class MapViewModel : ViewModel() {
                     desc = description,
                     color = color,
                     imageBytes = imageBytes,
-                    markerId = newMarkerId // <-- Feste ID übergeben
+                    markerId = newMarkerId //Feste ID übergeben
                 )
 
                 withContext(Dispatchers.Main) {

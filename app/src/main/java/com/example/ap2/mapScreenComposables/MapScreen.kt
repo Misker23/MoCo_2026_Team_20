@@ -176,10 +176,6 @@ fun MapScreen(
 
                 val markerPos = Position(longitude = lon, latitude = lat)
 
-                // Später für Fog of War:
-                // val isDiscovered = fogOfWarManager.isLocationRevealed(markerPos)
-                // if (isDiscovered) { ... }
-
                 // Mappt die Position dynamisch bei jeder Kamerabewegung
                 val screenPos = remember(currentCameraState, markerPos) {
                     projection?.screenLocationFromPosition(markerPos)
