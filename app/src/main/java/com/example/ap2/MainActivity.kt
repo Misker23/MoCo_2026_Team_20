@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import com.example.ap2.ui.theme.MoCo_2026Theme
 import io.github.jan.supabase.gotrue.auth
 import com.example.ap2.homeScreenComposables.HomeScreen
 import com.example.ap2.friendsScreenComposables.FriendsScreenCompose
+import com.example.ap2.mapScreenComposables.MapViewModel
 
 /**
  * Haupteinstiegspunkt der Anwendung.
@@ -51,6 +53,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val viewModel: MapViewModel by viewModels()
+
         // Standortberechtigungen beim Start prüfen
         requestLocationPermission()
 
@@ -58,7 +62,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            MoCo_2026Theme {
+            MoCo_2026Theme(darkTheme = viewModel.isDarkMode) {
                 // Prüft beim Start, ob bereits eine aktive Supabase-Sitzung existiert.
                 // Steuert, ob der User direkt auf den Homescreen oder zum Login muss.
                 var isLoggedIn by remember {
@@ -76,6 +80,7 @@ class MainActivity : ComponentActivity() {
                         // Hauptansicht (Karte & Overlays)
                         composable<HomeRoute> {
                             HomeScreen(
+                                viewModel = viewModel,
                                 onNavigateToFriends = {
                                     navController.navigate(FriendsRoute)
                                 },

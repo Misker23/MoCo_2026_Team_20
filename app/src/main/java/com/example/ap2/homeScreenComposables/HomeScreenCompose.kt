@@ -45,7 +45,7 @@ import org.maplibre.spatialk.geojson.Position
  */
 @Composable
 fun HomeScreen(
-    viewModel: MapViewModel = viewModel(),
+    viewModel: MapViewModel,
     onNavigateToFriends: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -281,7 +281,8 @@ fun HomeScreen(
             if (isSettingWindowVisable) {
                 SettingWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                    onDismiss = { isSettingWindowVisable = false }
+                    onDismiss = { isSettingWindowVisable = false },
+                    viewModel = viewModel
                 )
             }
         }

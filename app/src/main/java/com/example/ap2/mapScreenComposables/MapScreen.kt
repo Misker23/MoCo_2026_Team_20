@@ -131,7 +131,7 @@ fun MapScreen(
             // 1. --- KARTE ---
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
+                baseStyle = BaseStyle.Uri(viewModel.mapStyle),
                 cameraState = camera,
                 onMapClick = { pos, _ ->
                     viewModel.handleMapClick(pos)

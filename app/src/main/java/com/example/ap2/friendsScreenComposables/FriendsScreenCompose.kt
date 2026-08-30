@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +48,7 @@ fun FriendsScreenCompose(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.primary)
             .systemBarsPadding()
             .padding(16.dp)
     ) {
@@ -67,13 +68,13 @@ fun FriendsScreenCompose(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Zurück zum Hauptbildschirm",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
 
                 Text(
                     text = "Deine Freunde",
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -109,7 +110,7 @@ fun FriendsScreenCompose(
                 ) {
                     Text(
                         text = "Du hast noch keine Freunde hinzugefügt.",
-                        color = Color.DarkGray,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 14.sp
                     )
                 }
@@ -182,7 +183,7 @@ fun FriendCardItem(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.07f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -217,7 +218,7 @@ fun FriendCardItem(
                 Column {
                     Text(
                         text = friend.displayName,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp
                     )
@@ -270,6 +271,7 @@ fun AddFriendDialog(
     )
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.primary,
         onDismissRequest = onDismiss,
         title = { Text("Freund hinzufügen") },
         text = {
@@ -296,7 +298,7 @@ fun AddFriendDialog(
                     )
                 }
 
-                Text("Marker-Farbe wählen:", fontSize = 12.sp)
+                Text("Marker-Farbe wählen:", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(colorPalette) { hex ->
@@ -307,7 +309,7 @@ fun AddFriendDialog(
                                 .background(color, CircleShape)
                                 .border(
                                     width = if (selectedColor == hex) 3.dp else 0.dp,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.primary,
                                     shape = CircleShape
                                 )
                                 .clickable { selectedColor = hex }
@@ -333,15 +335,15 @@ fun AddFriendDialog(
                 }
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.tertiary)
                 } else {
-                    Text("Hinzufügen")
+                    Text("Hinzufügen", color = MaterialTheme.colorScheme.tertiary)
                 }
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text("Abbrechen", color = MaterialTheme.colorScheme.tertiary)
             }
         }
     )

@@ -28,7 +28,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -106,7 +108,7 @@ fun ProfileWindow(
         Box(
             modifier = Modifier
                 .size(400.dp, 400.dp)
-                .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(24.dp))
                 .padding(start = 16.dp, top = 12.dp, end = 16.dp)
         ) {
             Column(
@@ -161,7 +163,10 @@ fun ProfileWindow(
                             OutlinedTextField(
                                 value = tempUsername,
                                 onValueChange = { tempUsername = it },
-                                singleLine = true
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = MaterialTheme.colorScheme.secondary
+                                )
                             )
                             IconButton(onClick = {
                                 viewModel.updateUsername(tempUsername)
@@ -188,7 +193,7 @@ fun ProfileWindow(
                                 modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center,
                                 fontSize = 20.sp,
-                                color = Color.Black
+                                color = MaterialTheme.colorScheme.secondary
                             )
 
                             // 3. Das Bearbeitungs-Icon als IconButton (standardmäßig ca. 48dp groß)
@@ -200,7 +205,7 @@ fun ProfileWindow(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Bearbeiten",
                                     modifier = Modifier.size(20.dp),
-                                    tint = Color.Gray
+                                    tint = MaterialTheme.colorScheme.tertiary
                                 )
                             }
                         }
@@ -213,10 +218,10 @@ fun ProfileWindow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(height = 40.dp, width = 100.dp)
-                        .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp)),
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Quests", color = Color.Black)
+                    Text("Quests", color = MaterialTheme.colorScheme.secondary)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -225,11 +230,11 @@ fun ProfileWindow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(width = 350.dp, height = 40.dp)
-                        .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                         .clickable{showStatsDialog = true},
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Stats", color = Color.Black)
+                    Text("Stats", color = MaterialTheme.colorScheme.secondary)
                 }
 
                 // Schiebt den Button an den unteren Rand der Box
@@ -244,30 +249,27 @@ fun ProfileWindow(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 10.dp)
+                        .padding(bottom = 10.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color.Red)
                 ) {
-                    Text("Abmelden")
+                    Text("Abmelden", color = Color.White)
                 }
             }
         }
         if (showStatsDialog) {
             AlertDialog(
                 onDismissRequest = onDismiss,
-                title = { Text("Deine Statistiken", fontWeight = FontWeight.Bold) },
+                title = { Text("Deine Statistiken", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Zurückgelegte Schritte: ${viewModel.stepsFromDistance}")
-                        Text("Eigene Marker: ${viewModel.ownMarkersCount}")
-                        Text("Mit dir geteilte Marker: ${viewModel.markersSharedWithMeCount}")
+                        Text("Zurückgelegte Schritte: ${viewModel.stepsFromDistance}", color = MaterialTheme.colorScheme.secondary)
+                        Text("Eigene Marker: ${viewModel.ownMarkersCount}", color = MaterialTheme.colorScheme.secondary)
+                        Text("Mit dir geteilte Marker: ${viewModel.markersSharedWithMeCount}", color = MaterialTheme.colorScheme.secondary)
                     }
                 },
-                confirmButton = {
-                    TextButton(onClick = onDismiss) {
-                        Text("Schließen", color = Color(0xFF2196F3))
-                    }
-                },
+                confirmButton = {},
                 shape = RoundedCornerShape(16.dp),
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary
             )
         }
     }

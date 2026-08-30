@@ -24,8 +24,8 @@ fun ProfileButton(onLogout: () -> Unit, viewModel: MapViewModel, modifier: Modif
                 modifier = modifier,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
                 Text(text = "Profil", textAlign = TextAlign.Center, maxLines = 1)

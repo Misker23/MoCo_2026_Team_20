@@ -34,11 +34,13 @@ fun ShareMarkersDialog(
     val selectedIds = remember { mutableStateListOf<String>().apply { addAll(initialSharedIds) } }
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.background,
+        titleContentColor = MaterialTheme.colorScheme.secondary,
         onDismissRequest = onDismiss,
         title = { Text(text = "Marker mit $friendName teilen") },
         text = {
             if (myMarkers.isEmpty()) {
-                Text("Du hast noch keine eigenen Marker auf der Karte erstellt.")
+                Text("Du hast noch keine eigenen Marker auf der Karte erstellt.", color = MaterialTheme.colorScheme.secondary)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
@@ -68,6 +70,7 @@ fun ShareMarkersDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = marker.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Name",
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontSize = 14.sp
                             )
                         }
@@ -76,16 +79,16 @@ fun ShareMarkersDialog(
             }
         },
         confirmButton = {
-            Button(
+            OutlinedButton(
                 onClick = { onSave(selectedIds.toList()) },
                 enabled = myMarkers.isNotEmpty()
             ) {
-                Text("Speichern")
+                Text("Speichern", color = MaterialTheme.colorScheme.secondary)
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text("Abbrechen", color = MaterialTheme.colorScheme.secondary)
             }
         }
     )

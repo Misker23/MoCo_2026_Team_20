@@ -109,6 +109,16 @@ class MapViewModel : ViewModel() {
 
     private var isFogUpdateInProgress = false
 
+    var isDarkMode by mutableStateOf(false) // Standardmäßig Light Mode
+        private set
+
+    val mapStyle: String
+        get() = if (isDarkMode) {
+            "https://tiles.openfreemap.org/styles/dark"
+        } else {
+            "https://tiles.openfreemap.org/styles/liberty"
+        }
+
     // --- MAP STEUERUNG ---
 
     /**
@@ -448,5 +458,9 @@ class MapViewModel : ViewModel() {
                 loadFog()
             } catch (e: Exception) { /* ... */ }
         }
+    }
+
+    fun toggleDarkMode(enabled: Boolean) {
+        isDarkMode = enabled
     }
 }

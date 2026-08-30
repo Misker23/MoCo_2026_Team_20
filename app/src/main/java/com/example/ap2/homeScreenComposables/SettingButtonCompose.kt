@@ -19,8 +19,8 @@ fun SettingButton(onClick: () -> Unit, modifier: Modifier) {
         modifier = Modifier.size(width = 135.dp, height = 40.dp),
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Black.copy(alpha = 0.08f),
-            contentColor = Color.Black
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.secondary
         )
     ) {
         Text(text = "Einstellungen", textAlign = TextAlign.Center, maxLines = 1)

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,9 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.example.ap2.mapScreenComposables.MapViewModel
 
 @Composable
-fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
+fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit, viewModel: MapViewModel) {
     var darkMode by remember { mutableStateOf(false) }
     //Popup Fenster für SettingWindow
     Popup(
@@ -46,7 +49,7 @@ fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
                 //damit das Fenster nicht über der Bottombar öffnet
                 .padding(bottom = bottomPadding)
                 .size(350.dp, 685.dp)
-                .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(24.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             //verticales spacing zwischen den Items im Column
@@ -56,41 +59,42 @@ fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .size(height = 60.dp, width = 100.dp)
-                    .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                     .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Dark Mode", modifier = Modifier.weight(1f))
-                Switch(checked = darkMode, onCheckedChange = { darkMode = it })
+                Text("Dark Mode", color = MaterialTheme.colorScheme.secondary, modifier = Modifier.weight(1f))
+                Switch(checked = viewModel.isDarkMode, onCheckedChange = { viewModel.toggleDarkMode(it) })
             }
 
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .size(height = 60.dp, width = 100.dp)
-                .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                 .padding(10.dp),
 
             ) {
                 (Text(modifier = Modifier.align(Alignment.CenterStart),
                     text ="Nutzungsbedingungen",
-                    color = Color.Black))
+                    color = MaterialTheme.colorScheme.secondary))
             }
 
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .size(height = 60.dp, width = 100.dp)
-                .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                 .padding(10.dp),
 
                 ) {
                 (Text(modifier = Modifier.align(Alignment.CenterStart),
                     text ="Hilfe",
-                    color = Color.Black))
+                    color = MaterialTheme.colorScheme.secondary))
             }
 
             //Button zum schließen des Screens, da es ein größeres Window ist
             Spacer(modifier = Modifier.weight(1f))
-            Button(onClick = onDismiss) { Text("Schließen") }
+            Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3), contentColor = Color.Black))
+            { Text("Schließen") }
             Text(
                 "App created by Artem, Dustin & Türker",
                 color = Color.Gray.copy(alpha = 0.5f),
@@ -103,5 +107,5 @@ fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
 @Preview
 @Composable
 fun SettingWindowPreview() {
-    SettingWindow(bottomPadding = 0.dp, onDismiss = {})
+    SettingWindow(bottomPadding = 0.dp, onDismiss = {}, viewModel = MapViewModel())
 }
