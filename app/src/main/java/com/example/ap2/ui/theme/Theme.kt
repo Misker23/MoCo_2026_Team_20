@@ -14,13 +14,14 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.ap2.ui.theme.LightColorScheme
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color.DarkGray,
+    primary = Color.DarkGray,                            //selbst gewähltes dark Gray
     secondary = Color.White,
     tertiary = Color.LightGray,
-    background = Color.DarkGray.copy(alpha = 0.9f),
+    background = Color.DarkGray.copy(alpha = 0.9f),      //selbst gewähltes dark Gray
     surface = Color.LightGray.copy(alpha = 0.07f),
     onPrimary = Color.Gray,
     onBackground = Color.White.copy(alpha = 0.08f),
+    surfaceTint = Color.Transparent
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -31,13 +32,12 @@ private val LightColorScheme = lightColorScheme(
     surface = Color.Black.copy(alpha = 0.07f),
     onPrimary = Color.DarkGray,
     onBackground = Color.Black.copy(alpha = 0.08f),
+    surfaceTint = Color.Transparent
 )
 
 @Composable
 fun MoCo_2026Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme

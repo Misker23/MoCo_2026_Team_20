@@ -81,14 +81,18 @@ fun ShareMarkersDialog(
         confirmButton = {
             OutlinedButton(
                 onClick = { onSave(selectedIds.toList()) },
-                enabled = myMarkers.isNotEmpty()
+                enabled = myMarkers.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
             ) {
-                Text("Speichern", color = MaterialTheme.colorScheme.secondary)
+                Text("Speichern", color = Color.Black)
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Abbrechen", color = MaterialTheme.colorScheme.secondary)
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                Text("Abbrechen", color = Color.Black)
             }
         }
     )

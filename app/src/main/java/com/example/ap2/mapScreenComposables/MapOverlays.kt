@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +46,7 @@ fun PlacingModeHint(
 ) {
     Card(
         modifier = modifier.padding(top = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -53,14 +54,14 @@ fun PlacingModeHint(
         ) {
             Text(
                 text = "Tippe auf die Karte, um den Marker zu setzen",
-                color = Color.Black
+                color = MaterialTheme.colorScheme.secondary
             )
             Button(
                 onClick = onCancel,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.6f)),
                 modifier = Modifier.padding(top = 8.dp)
             ) {
-                Text("Abbrechen", color = Color.White, fontSize = 12.sp)
+                Text("Abbrechen", color = Color.Black, fontSize = 12.sp)
             }
         }
     }
@@ -85,14 +86,14 @@ fun ConfirmMarkerOverlay(
             .fillMaxWidth()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Marker hier speichern?", fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Marker hier speichern?", color = MaterialTheme.colorScheme.secondary, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -103,16 +104,17 @@ fun ConfirmMarkerOverlay(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Abbrechen")
+                    Text("Abbrechen", color = Color.Black)
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Button(
                     onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Bestätigen")
+                    Text("Bestätigen", color = Color.Black)
                 }
             }
         }

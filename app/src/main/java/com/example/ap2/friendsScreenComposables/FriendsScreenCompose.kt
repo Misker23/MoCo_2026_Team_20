@@ -97,7 +97,12 @@ fun FriendsScreenCompose(
                     .fillMaxWidth(),
                 placeholder = { Text("Suche") },
                 leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.LightGray,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -321,6 +326,7 @@ fun AddFriendDialog(
         confirmButton = {
             Button(
                 enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                 onClick = {
                     coroutineScope.launch {
                         isLoading = true
@@ -337,13 +343,16 @@ fun AddFriendDialog(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.tertiary)
                 } else {
-                    Text("Hinzufügen", color = MaterialTheme.colorScheme.tertiary)
+                    Text("Hinzufügen", color = Color.Black)
                 }
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Abbrechen", color = MaterialTheme.colorScheme.tertiary)
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                Text("Abbrechen", color = Color.Black)
             }
         }
     )

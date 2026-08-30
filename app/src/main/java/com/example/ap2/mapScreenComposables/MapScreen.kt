@@ -154,7 +154,7 @@ fun MapScreen(
                     FillLayer(
                         id = "fog-layer",
                         source = geoJsonSource,
-                        color = const(Color.DarkGray),
+                        color = const(Color.Gray),
                         opacity = const(0.98f)
                     )
                 }

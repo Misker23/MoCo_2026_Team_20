@@ -160,7 +160,7 @@ fun MarkerWindow(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                 ) {
-                    Text("Änderungen speichern", color = Color.White)
+                    Text("Änderungen speichern", color = Color.Black)
                 }
 
                 Button(
@@ -168,7 +168,7 @@ fun MarkerWindow(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Marker löschen", color = Color.White)
+                    Text("Marker löschen", color = Color.Black)
                 }
             }
         }

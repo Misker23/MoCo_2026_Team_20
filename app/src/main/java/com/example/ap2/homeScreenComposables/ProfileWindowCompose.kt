@@ -252,7 +252,7 @@ fun ProfileWindow(
                         .padding(bottom = 10.dp),
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color.Red)
                 ) {
-                    Text("Abmelden", color = Color.White)
+                    Text("Abmelden", color = Color.Black)
                 }
             }
         }
