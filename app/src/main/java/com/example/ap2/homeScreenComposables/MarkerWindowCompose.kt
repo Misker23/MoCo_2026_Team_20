@@ -76,7 +76,7 @@ fun MarkerWindow(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
                 .size(350.dp, 650.dp)
-                .background(Color(0xFF1A1A1A).copy(alpha = 0.96f), RoundedCornerShape(24.dp))
+                .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(24.dp))
                 .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,7 +86,7 @@ fun MarkerWindow(
             Box(
                 modifier = Modifier
                     .size(200.dp, 200.dp) // Leicht verkleinert, damit mehr Platz für Text ist
-                    .background(Color.Black, RoundedCornerShape(12.dp))
+                    .background(Color.Gray, RoundedCornerShape(12.dp))
                     .clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
@@ -97,7 +97,7 @@ fun MarkerWindow(
                     !markerDto?.image_url.isNullOrEmpty() -> {
                         AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
-                    else -> { Text("Bild hinzufügen", color = Color.Gray) }
+                    else -> { Text("Bild hinzufügen", color = Color.White) }
                 }
             }
 
@@ -108,7 +108,7 @@ fun MarkerWindow(
                 "#795548", "#9E9E9E", "#607D8B"
             )
 
-            Text("Marker-Farbe wählen:", color = Color.White)
+            Text("Marker-Farbe wählen:", color = Color.Black)
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -122,7 +122,7 @@ fun MarkerWindow(
                             .background(composeColor, CircleShape)
                             .border(
                                 width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
-                                color = Color.White, // Border auf Weiß geändert für Darkmode
+                                color = Color.LightGray, // Border auf Weiß geändert für Darkmode
                                 shape = CircleShape
                             )
                             .clickable { selectedColor = hexColor }
@@ -134,6 +134,7 @@ fun MarkerWindow(
                 value = description,
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 label = { Text("Beschreibung") }
             )
 

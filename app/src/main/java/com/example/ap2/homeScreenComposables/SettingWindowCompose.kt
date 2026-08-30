@@ -72,7 +72,7 @@ fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
 
             ) {
                 (Text(modifier = Modifier.align(Alignment.CenterStart),
-                    text ="Terms of Service",
+                    text ="Nutzungsbedingungen",
                     color = Color.Black))
             }
 
@@ -84,13 +84,13 @@ fun SettingWindow(bottomPadding: Dp, onDismiss: () -> Unit) {
 
                 ) {
                 (Text(modifier = Modifier.align(Alignment.CenterStart),
-                    text ="Support",
+                    text ="Hilfe",
                     color = Color.Black))
             }
 
             //Button zum schließen des Screens, da es ein größeres Window ist
             Spacer(modifier = Modifier.weight(1f))
-            Button(onClick = onDismiss) { Text("Close") }
+            Button(onClick = onDismiss) { Text("Schließen") }
             Text(
                 "App created by Artem, Dustin & Türker",
                 color = Color.Gray.copy(alpha = 0.5f),

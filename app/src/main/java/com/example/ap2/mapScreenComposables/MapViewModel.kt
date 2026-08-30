@@ -3,6 +3,7 @@ package com.example.ap2.mapScreenComposables
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ap2.data_models.MapMarkerUiState
 import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data_models.ProfileDto
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -91,6 +93,21 @@ class MapViewModel : ViewModel() {
 
     // für die Blickrichtung
     var userBearing by mutableStateOf(0f)
+
+    // Profil aus Datenbank laden
+    var currentUserProfile by mutableStateOf<ProfileDto?>(null)
+        private set
+
+    val ownMarkersCount by derivedStateOf {
+        markerList.count { it.user_id == supabase.auth.currentUserOrNull()?.id }
+    }
+
+    val markersSharedWithMeCount by derivedStateOf {
+        val myId = supabase.auth.currentUserOrNull()?.id
+        markerList.count { it.user_id != myId && it.user_id.isNotEmpty()}
+    }
+
+    private var isFogUpdateInProgress = false
 
     // --- MAP STEUERUNG ---
 
@@ -201,8 +218,15 @@ class MapViewModel : ViewModel() {
 
     /** Aktualisiert die intern gespeicherte Position des Nutzers. */
     fun updateUserPosition(position: Position) {
-        val previousPosition = userPosition                             // Code hinzugefügt, der den Stepcounter über Distanz ausrechnet
+        if (lastStepPosition == null) {
+            lastStepPosition = position
+            userPosition = position
+            checkFogUpdate(position)
+        }
+
+        val previousPosition = lastStepPosition!!                             // Code hinzugefügt, der den Stepcounter über Distanz ausrechnet
         userPosition = position
+        lastStepPosition = position
 
         val distanceMoved = distanceBetween(previousPosition, position)
 
@@ -231,6 +255,7 @@ class MapViewModel : ViewModel() {
     }
 
     private fun checkFogUpdate(position: Position) {
+        if (isFogUpdateInProgress) return
 
         val lastPosition = lastFogPosition
 
@@ -249,11 +274,10 @@ class MapViewModel : ViewModel() {
     }
 
     private fun addFogPoint(position: Position) {
-
+        isFogUpdateInProgress = true
         viewModelScope.launch {
 
             try {
-
                 supabase.postgrest.rpc(
                     "add_fog_point",
                     buildJsonObject {
@@ -262,19 +286,18 @@ class MapViewModel : ViewModel() {
                     }
                 )
                 loadFog()
-
                 Log.d(
                     "MapViewModel",
                     "Fog aktualisiert: ${position.latitude}, ${position.longitude}"
                 )
-
             } catch (e: Exception) {
-
                 Log.e(
                     "MapViewModel",
                     "Fehler beim Aktualisieren des Fogs",
                     e
                 )
+            } finally {
+                isFogUpdateInProgress = false
             }
         }
     }
@@ -282,7 +305,7 @@ class MapViewModel : ViewModel() {
     fun loadFog() {
         viewModelScope.launch {
             try {
-                supabase.postgrest.rpc("ensure_user_fog")
+                //supabase.postgrest.rpc("ensure_user_fog")
 
                 val result = supabase.postgrest.rpc("get_user_fog")
                 fogGeoJson = result.data
@@ -380,6 +403,50 @@ class MapViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("MapViewModel", "Fehler beim Löschen: ${e.message}")
             }
+        }
+    }
+
+    fun fetchCurrentUserProfile() {
+        viewModelScope.launch {
+            val user = supabase.auth.currentUserOrNull() ?: return@launch
+            try {
+                val profile = supabase.postgrest.from("profiles")
+                    .select() {
+                        filter { eq("id", user.id) }
+                    }
+                    .decodeSingle<ProfileDto>()
+
+                currentUserProfile = profile
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Profil konnte nicht geladen werden: ${e.message}")
+            }
+        }
+    }
+
+    fun updateUsername(newUsername: String) {
+        viewModelScope.launch {
+            val user = supabase.auth.currentUserOrNull() ?: return@launch
+            try {
+                // Update in der 'profiles' Tabelle
+                supabase.postgrest.from("profiles").update({
+                    set("username", newUsername)
+                }) {
+                    filter { eq("id", user.id) }
+                }
+                // Profil neu laden, damit die UI überall den neuen Namen zeigt
+                fetchCurrentUserProfile()
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Fehler beim Updaten des Namens: ${e.message}")
+            }
+        }
+    }
+
+    fun initializeFog() {
+        viewModelScope.launch {
+            try {
+                supabase.postgrest.rpc("ensure_user_fog")
+                loadFog()
+            } catch (e: Exception) { /* ... */ }
         }
     }
 }

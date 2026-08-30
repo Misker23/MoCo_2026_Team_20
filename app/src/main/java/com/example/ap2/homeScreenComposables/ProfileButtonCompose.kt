@@ -10,12 +10,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ap2.data_models.ProfileDto
+import com.example.ap2.mapScreenComposables.MapViewModel
 
 @Composable
-fun ProfileButton(onLogout: () -> Unit, modifier: Modifier = Modifier) {
+fun ProfileButton(onLogout: () -> Unit, viewModel: MapViewModel, modifier: Modifier = Modifier) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.padding(start = 16.dp, top = 12.dp)) {
+    Box(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
         if (!showMenu) {
             Button(
                 onClick = { showMenu = true },
@@ -26,14 +28,14 @@ fun ProfileButton(onLogout: () -> Unit, modifier: Modifier = Modifier) {
                     contentColor = Color.Black
                 )
             ) {
-                Text(text = "Profile", textAlign = TextAlign.Center, maxLines = 1)
+                Text(text = "Profil", textAlign = TextAlign.Center, maxLines = 1)
             }
         }
         if (showMenu) {
             ProfileWindow(
                 onDismiss = { showMenu = false },
-                profileDto = null,
-                onLogout = onLogout
+                onLogout = onLogout,
+                viewModel = viewModel
             )
         }
     }
@@ -42,5 +44,5 @@ fun ProfileButton(onLogout: () -> Unit, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 fun ProfileButtonPreview() {
-    ProfileButton(onLogout = {})
+    ProfileButton(onLogout = {}, viewModel = MapViewModel())
 }

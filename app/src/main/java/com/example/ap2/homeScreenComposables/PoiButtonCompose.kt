@@ -16,7 +16,7 @@ import com.example.ap2.ui.theme.MoCo_2026Theme
 fun POIButton(onClick: () -> Unit, modifier: Modifier) {
     Button(
         onClick = onClick,
-        modifier = Modifier.size(width = 100.dp, height = 40.dp),
+        modifier = Modifier.size(width = 135.dp, height = 40.dp),
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Black.copy(alpha = 0.08f),

@@ -125,7 +125,7 @@ fun MapScreen(
 
             LaunchedEffect(Unit) {
                 viewModel.loadMarkersForMap()
-                viewModel.loadFog()
+                viewModel.initializeFog()
             }
 
             // 1. --- KARTE ---
@@ -145,13 +145,15 @@ fun MapScreen(
             ) {
                 if (viewModel.fogGeoJson != null) {
 
-                    val fogSource = rememberGeoJsonSource(
-                        data = GeoJsonData.JsonString(viewModel.fogGeoJson!!)
-                    )
+                    val fogSource = remember(viewModel.fogGeoJson) {
+                        GeoJsonData.JsonString(viewModel.fogGeoJson!!)
+                    }
+
+                    val geoJsonSource = rememberGeoJsonSource(data = fogSource)
 
                     FillLayer(
                         id = "fog-layer",
-                        source = fogSource,
+                        source = geoJsonSource,
                         color = const(Color.DarkGray),
                         opacity = const(0.98f)
                     )

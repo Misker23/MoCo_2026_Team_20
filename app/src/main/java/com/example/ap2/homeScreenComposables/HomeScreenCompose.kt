@@ -64,15 +64,13 @@ fun HomeScreen(
 
     // 1. Initialisierung Sensoren & Daten-Upload
     val motionRepo = remember { MotionRepository(context) }
-    var rotationData by remember { mutableStateOf(floatArrayOf(0f, 0f, 0f, 0f)) }
-    var steps by remember { mutableFloatStateOf(0f) }
     var compassDegree by remember { mutableFloatStateOf(0f) }
 
     // 2. Initialer Start: Marker laden & Sensoren abonnieren
     LaunchedEffect(Unit) {
         // Marker aus Supabase laden
         viewModel.loadMarkersForMap()
-
+        viewModel.fetchCurrentUserProfile()
 
 //        // Schritte sammeln
 //        launch {
@@ -189,27 +187,28 @@ fun HomeScreen(
             if (viewModel.currentMode == MapMode.DEFAULT) {
                 ProfileButton(
                     onLogout = onLogout,
-                    modifier = Modifier
+                    modifier = Modifier,
+                    viewModel = viewModel
                 )
             }
 
             // SCHRITTE
-            if (viewModel.currentMode == MapMode.DEFAULT) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 150.dp, height = 60.dp)
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Schritte: ${viewModel.stepsFromDistance}",
-                        color = Color.Black,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+//            if (viewModel.currentMode == MapMode.DEFAULT) {
+//                Box(
+//                    modifier = Modifier
+//                        .padding(start = 16.dp, top = 80.dp)
+//                        .size(width = 120.dp, height = 30.dp)
+//                        .align(Alignment.TopStart)
+//                        .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp)),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Text(
+//                        text = "Schritte: ${viewModel.stepsFromDistance}",
+//                        color = Color.Black,
+//                        style = MaterialTheme.typography.bodyMedium
+//                    )
+//                }
+//            }
 
             // SNEAK PEEK DIALOG
             if (isSneakPeekVisible && viewModel.selectedMarker != null) {

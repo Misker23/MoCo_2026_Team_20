@@ -17,15 +17,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,12 +44,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.ap2.data_models.ProfileDto
+import com.example.ap2.mapScreenComposables.MapViewModel
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
@@ -51,11 +63,24 @@ import kotlinx.coroutines.launch
 fun ProfileWindow(
     onDismiss: () -> Unit,
     onLogout: () -> Unit,
-    profileDto: ProfileDto?
+    viewModel: MapViewModel
 ) {
+
+    LaunchedEffect(Unit) {
+        if (viewModel.currentUserProfile == null) {
+            viewModel.fetchCurrentUserProfile()
+            viewModel.loadMarkersForMap()
+        }
+    }
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    val profile = viewModel.currentUserProfile
+
+    var isEditing by remember { mutableStateOf(false) }
+    var tempUsername by remember(profile) { mutableStateOf(profile?.username ?: "") }
+    var showStatsDialog by remember { mutableStateOf(false) }
 
     val previewBitmap = remember(selectedImageBytes) {
         selectedImageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
@@ -125,17 +150,61 @@ fun ProfileWindow(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        modifier = Modifier.padding(4.dp),
-                        text = "Benutzername: ${profileDto?.username ?: "Unbekannt"}",
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        Modifier.size(18.dp).align(Alignment.CenterVertically)
-                    )
+                    if (isEditing) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            OutlinedTextField(
+                                value = tempUsername,
+                                onValueChange = { tempUsername = it },
+                                singleLine = true
+                            )
+                            IconButton(onClick = {
+                                viewModel.updateUsername(tempUsername)
+                                isEditing = false
+                            }) {
+                                Icon(Icons.Default.Check, contentDescription = "Speichern", tint = Color.Green)
+                            }
+                        }
+                    } else {
+                        // NORMALER TEXT
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 1. Ein unsichtbarer Platzhalter links, der genau so groß ist wie der Button rechts.
+                            // Das sorgt dafür, dass der Text in der Mitte bleibt.
+                            Spacer(modifier = Modifier.size(48.dp))
+
+                            // 2. Der Username nimmt den gesamten restlichen Platz ein und zentriert sich selbst.
+                            Text(
+                                text = profile?.username ?: "Lädt...",
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                                fontSize = 20.sp,
+                                color = Color.Black
+                            )
+
+                            // 3. Das Bearbeitungs-Icon als IconButton (standardmäßig ca. 48dp groß)
+                            IconButton(
+                                onClick = { isEditing = true },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Bearbeiten",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -156,7 +225,8 @@ fun ProfileWindow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(width = 350.dp, height = 40.dp)
-                        .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp)),
+                        .background(Color.Black.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+                        .clickable{showStatsDialog = true},
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Stats", color = Color.Black)
@@ -180,11 +250,31 @@ fun ProfileWindow(
                 }
             }
         }
+        if (showStatsDialog) {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("Deine Statistiken", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Zurückgelegte Schritte: ${viewModel.stepsFromDistance}")
+                        Text("Eigene Marker: ${viewModel.ownMarkersCount}")
+                        Text("Mit dir geteilte Marker: ${viewModel.markersSharedWithMeCount}")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text("Schließen", color = Color(0xFF2196F3))
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                containerColor = Color.White
+            )
+        }
     }
 }
 
 @Preview
 @Composable
 fun ProfileWindowPreview() {
-    ProfileWindow(onDismiss = {}, profileDto = null, onLogout = {})
+    ProfileWindow(onDismiss = {}, onLogout = {}, viewModel = MapViewModel())
 }

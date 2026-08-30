@@ -50,7 +50,7 @@ fun SneakPeekMarkerCompose(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onExpandRequested() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A).copy(alpha = 0.96f)),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
@@ -90,7 +90,7 @@ fun SneakPeekMarkerCompose(
             ) {
                 Text(
                     text = markerDto.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Titel",
-                    color = Color.White,
+                    color = Color.Black,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 2
