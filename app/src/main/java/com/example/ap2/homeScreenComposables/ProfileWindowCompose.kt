@@ -15,13 +15,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.example.ap2.data_models.AppDatabase
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ProfileWindow(
@@ -29,6 +33,7 @@ fun ProfileWindow(
     onLogout: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Popup(
         alignment = Alignment.TopStart,
@@ -54,7 +59,15 @@ fun ProfileWindow(
                     onClick = {
                         coroutineScope.launch {
                             supabase.auth.signOut()
-                            onLogout() // Bringt den User zurück zum AuthScreen
+
+                            // Lokale Datenbank leeren, damit der nächste User keine alten Daten sieht
+                            withContext(Dispatchers.IO) {
+                                val dao = AppDatabase.getDatabase(context).mapDao()
+                                dao.clearAllMarkers()
+                                dao.clearFogCache()
+                            }
+
+                            onLogout()
                         }
                     },
                     modifier = Modifier.fillMaxWidth()

@@ -1,6 +1,7 @@
 package com.example.ap2.sync
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.ap2.data_models.AppDatabase
@@ -38,7 +39,7 @@ class MapSyncWorker(appContext: Context, workerParams: WorkerParameters) : Corou
                 dao.deletePendingDeletedMarkers(deletedIds)
             }
 
-            // 2. Unsynced Marker hochladen (FEHLTE)
+            // 2. Unsynced Marker hochladen
             val unsyncedMarkers = dao.getUnsyncedMarkers()
             for (marker in unsyncedMarkers) {
                 var remoteImageUrl = marker.imageUrl
@@ -47,20 +48,23 @@ class MapSyncWorker(appContext: Context, workerParams: WorkerParameters) : Corou
                 if (!marker.imageUrl.isNullOrEmpty() && !marker.imageUrl.startsWith("http")) {
                     val localFile = File(marker.imageUrl)
                     if (localFile.exists()) {
-                        val fileName = "marker_${marker.id}.jpg"
-                        val bucket = supabase.storage.from("marker-images")
-                        bucket.upload(fileName, localFile.readBytes(), upsert = true)
-                        remoteImageUrl = bucket.publicUrl(fileName)
+                        try {
+                            val fileName = "marker_${marker.id}.jpg"
+                            val bucket = supabase.storage.from("marker-images")
+                            bucket.upload(fileName, localFile.readBytes(), upsert = true)
+                            remoteImageUrl = bucket.publicUrl(fileName)
+                        } catch (e: Exception) {
+                            Log.e("MapSyncWorker", "Fehler beim Bild-Upload: ${e.message}")
+                        }
                     }
                 }
 
-                // Payload für PostGIS aufbereiten
+                // Payload für PostGIS aufbereiten (OHNE 'position', übernimmt der DB-Trigger!)
                 val payload = buildJsonObject {
                     put("id", marker.id)
                     put("user_id", marker.userId)
                     put("lat", marker.lat)
                     put("lon", marker.lon)
-                    put("position", "SRID=4326;POINT(${marker.lon} ${marker.lat})")
                     marker.description?.let { put("description", it) }
                     marker.color?.let { put("color", it) }
                     remoteImageUrl?.let { put("image_url", it) }
@@ -80,18 +84,35 @@ class MapSyncWorker(appContext: Context, workerParams: WorkerParameters) : Corou
             // 3. Offline Fog-Punkte per RPC übertragen
             val pendingFog = dao.getPendingFogPoints()
             if (pendingFog.isNotEmpty()) {
-                val ids = pendingFog.map { point ->
-                    supabase.postgrest.rpc("add_fog_point", buildJsonObject {
-                        put("new_lat", point.lat)
-                        put("new_lon", point.lon)
-                    })
-                    point.id
+                val ids = mutableListOf<Long>()
+                for (point in pendingFog) {
+                    try {
+                        supabase.postgrest.rpc("add_fog_point", buildJsonObject {
+                            put("new_lat", point.lat)
+                            put("new_lon", point.lon)
+                        })
+                        ids.add(point.id)
+                    } catch (e: Exception) {
+                        Log.e("MapSyncWorker", "Fog-RPC Fehler: ${e.message}")
+                    }
                 }
-                dao.deletePendingFogPoints(ids)
+                if (ids.isNotEmpty()) {
+                    dao.deletePendingFogPoints(ids)
+                }
             }
 
-            // 4. Neueste Server-Daten synchronisieren
+            // 4. Neueste Server-Daten synchronisieren (Eigene + geteilte Marker)
             val remoteMarkers = supabase.postgrest.from("markers").select().decodeList<MarkerDto>()
+            val remoteIds = remoteMarkers.mapNotNull { it.id }.toSet()
+
+            // Marker entfernen, deren Freigabe entzogen oder die auf dem Server gelöscht wurden
+            val localSyncedMarkers = dao.getSyncedMarkers()
+            val markersToRemove = localSyncedMarkers.filter { it.id !in remoteIds }
+            for (staleMarker in markersToRemove) {
+                dao.deleteMarkerById(staleMarker.id)
+            }
+
+            // Aktuelle Server-Marker lokal in Room aktualisieren
             val entities = withContext(Dispatchers.Default) {
                 remoteMarkers.map { dto ->
                     LocalMarkerEntity(
@@ -115,6 +136,7 @@ class MapSyncWorker(appContext: Context, workerParams: WorkerParameters) : Corou
 
             Result.success()
         } catch (e: Exception) {
+            Log.e("MapSyncWorker", "Sync fehlgeschlagen: ${e.message}", e)
             Result.retry()
         }
     }

@@ -10,12 +10,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
-import com.example.ap2.supabase
-import io.github.jan.supabase.postgrest.postgrest
 
 class MapRepository(private val context: Context) {
     private val dao = AppDatabase.getDatabase(context).mapDao()
 
+    // Nur EINE Instanz von getMarkersFlow()
     fun getMarkersFlow(): Flow<List<MarkerDto>> = dao.getAllMarkersFlow().map { list ->
         list.map { MarkerDto(it.id, it.userId, it.lat, it.lon, it.description, it.color, it.imageUrl) }
     }
@@ -58,7 +57,7 @@ class MapRepository(private val context: Context) {
     }
 
     suspend fun deleteMarker(id: String) = withContext(Dispatchers.IO) {
-        // 1. Aus der lokalen Room-Datenbank löschen (UI aktualisiert sich sofort)
+        // 1. Aus der lokalen Room-Datenbank löschen
         dao.deleteMarkerById(id)
 
         // 2. ID in die Warteschlange für den Server-Sync eintragen

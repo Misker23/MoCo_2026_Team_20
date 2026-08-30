@@ -1,6 +1,16 @@
 create extension if not exists "postgis" with schema "public";
 
 
+  create table "public"."profiles" (
+    "id" uuid not null,
+    "username" text not null,
+    "created_at" timestamp with time zone default now()
+      );
+
+
+alter table "public"."profiles" enable row level security;
+
+
   create table "public"."friendships" (
     "user_id" uuid not null,
     "friend_id" uuid not null,
@@ -16,27 +26,18 @@ alter table "public"."friendships" enable row level security;
   create table "public"."markers" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
-    "position" public.geometry(Point,4326) not null,
+    "position" public.geometry(Point,4326),
     "color" text,
     "image_url" text,
     "description" text,
     "created_at" timestamp with time zone default now(),
+    "updated_at" timestamp with time zone default now(),
     "lat" double precision,
     "lon" double precision
       );
 
 
 alter table "public"."markers" enable row level security;
-
-
-  create table "public"."profiles" (
-    "id" uuid not null,
-    "username" text not null,
-    "created_at" timestamp with time zone default now()
-      );
-
-
-alter table "public"."profiles" enable row level security;
 
 
   create table "public"."shared_markers" (
@@ -78,39 +79,53 @@ alter table "public"."shared_markers" add constraint "shared_markers_pkey" PRIMA
 
 alter table "public"."user_fog" add constraint "user_fog_pkey" PRIMARY KEY using index "user_fog_pkey";
 
-alter table "public"."friendships" add constraint "friendships_friend_id_fkey" FOREIGN KEY (friend_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
-
-alter table "public"."friendships" validate constraint "friendships_friend_id_fkey";
-
-alter table "public"."friendships" add constraint "friendships_user_profile_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-
-alter table "public"."friendships" add constraint "friendships_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
-
-alter table "public"."friendships" validate constraint "friendships_user_id_fkey";
-
-alter table "public"."markers" add constraint "markers_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
-
-alter table "public"."markers" validate constraint "markers_user_id_fkey";
-
 alter table "public"."profiles" add constraint "profiles_id_fkey" FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
 alter table "public"."profiles" validate constraint "profiles_id_fkey";
 
 alter table "public"."profiles" add constraint "profiles_username_key" UNIQUE using index "profiles_username_key";
 
-alter table "public"."shared_markers" add constraint "shared_markers_friend_user_id_fkey" FOREIGN KEY (friend_user_id) REFERENCES auth.users(id) not valid;
+alter table "public"."friendships" add constraint "friendships_user_profile_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
-alter table "public"."shared_markers" validate constraint "shared_markers_friend_user_id_fkey";
+alter table "public"."friendships" validate constraint "friendships_user_profile_fkey";
+
+alter table "public"."friendships" add constraint "friendships_friend_id_fkey" FOREIGN KEY (friend_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."friendships" validate constraint "friendships_friend_id_fkey";
+
+alter table "public"."markers" add constraint "markers_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."markers" validate constraint "markers_user_id_fkey";
 
 alter table "public"."shared_markers" add constraint "shared_markers_marker_id_fkey" FOREIGN KEY (marker_id) REFERENCES public.markers(id) ON DELETE CASCADE not valid;
 
 alter table "public"."shared_markers" validate constraint "shared_markers_marker_id_fkey";
 
-alter table "public"."user_fog" add constraint "user_fog_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
+alter table "public"."shared_markers" add constraint "shared_markers_friend_user_id_fkey" FOREIGN KEY (friend_user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."shared_markers" validate constraint "shared_markers_friend_user_id_fkey";
+
+alter table "public"."user_fog" add constraint "user_fog_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
 alter table "public"."user_fog" validate constraint "user_fog_user_id_fkey";
 
 set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.sync_marker_position()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.lat IS NOT NULL AND NEW.lon IS NOT NULL THEN
+        NEW.position := ST_SetSRID(ST_MakePoint(NEW.lon, NEW.lat), 4326);
+    END IF;
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$function$
+;
 
 CREATE OR REPLACE FUNCTION public.add_fog_point(new_lat double precision, new_lon double precision)
  RETURNS void
@@ -264,18 +279,6 @@ grant select on table "public"."profiles" to "authenticated";
 
 grant update on table "public"."profiles" to "authenticated";
 
-grant references on table "public"."profiles" to "service_role";
-
-grant trigger on table "public"."profiles" to "service_role";
-
-grant truncate on table "public"."profiles" to "service_role";
-
-grant references on table "public"."shared_markers" to "anon";
-
-grant trigger on table "public"."shared_markers" to "anon";
-
-grant truncate on table "public"."shared_markers" to "anon";
-
 grant delete on table "public"."shared_markers" to "authenticated";
 
 grant insert on table "public"."shared_markers" to "authenticated";
@@ -299,10 +302,10 @@ grant execute on function public.ensure_user_fog() to "authenticated";
 grant execute on function public.get_user_fog() to "authenticated";
 
 
-  create policy "friendships_delete_policy"
+  create policy "friendships_select_policy"
   on "public"."friendships"
   as permissive
-  for delete
+  for select
   to authenticated
 using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
@@ -314,83 +317,6 @@ using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
   for insert
   to authenticated
 with check ((user_id = auth.uid()));
-grant delete on table "public"."spatial_ref_sys" to "service_role";
-
-grant insert on table "public"."spatial_ref_sys" to "service_role";
-
-grant references on table "public"."spatial_ref_sys" to "service_role";
-
-grant select on table "public"."spatial_ref_sys" to "service_role";
-
-grant trigger on table "public"."spatial_ref_sys" to "service_role";
-
-grant truncate on table "public"."spatial_ref_sys" to "service_role";
-
-grant update on table "public"."spatial_ref_sys" to "service_role";
-
-grant references on table "public"."user_fog" to "anon";
-
-grant trigger on table "public"."user_fog" to "anon";
-
-grant truncate on table "public"."user_fog" to "anon";
-
-grant references on table "public"."user_fog" to "authenticated";
-
-grant trigger on table "public"."user_fog" to "authenticated";
-
-grant truncate on table "public"."user_fog" to "authenticated";
-
-grant references on table "public"."user_fog" to "service_role";
-
-grant trigger on table "public"."user_fog" to "service_role";
-
-grant truncate on table "public"."user_fog" to "service_role";
-
--- ============================================
--- FRIENDSHIPS
--- ============================================
-
--- Eigene Freundschaften und eingehende Anfragen lesen
-CREATE POLICY "friendships_select_policy"
-ON public.friendships
-FOR SELECT
-TO authenticated
-USING (
-    user_id = auth.uid()
-    OR friend_id = auth.uid()
-);
-
--- Freundschaftsanfragen erstellen:
--- Der eingeloggte Nutzer muss der Absender sein.
-CREATE POLICY "friendships_insert_policy"
-ON public.friendships
-FOR INSERT
-TO authenticated
-WITH CHECK (
-    user_id = auth.uid()
-);
-
--- Freundschaftsanfrage annehmen:
--- Sowohl Absender als auch Empfänger dürfen den Status ändern.
-CREATE POLICY "friendships_update_policy"
-ON public.friendships
-FOR UPDATE
-TO authenticated
-USING (
-    user_id = auth.uid()
-    OR friend_id = auth.uid()
-)
-WITH CHECK (
-    user_id = auth.uid()
-    OR friend_id = auth.uid()
-);
-
-  create policy "friendships_select_policy"
-  on "public"."friendships"
-  as permissive
-  for select
-  to authenticated
-using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
 
 
@@ -399,35 +325,17 @@ using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
   as permissive
   for update
   to authenticated
-using ((user_id = auth.uid()));
-
--- Freundschaftsanfrage/Freundschaft löschen:
--- Beide Beteiligten dürfen sie löschen.
-CREATE POLICY "friendships_delete_policy"
-ON public.friendships
-FOR DELETE
-TO authenticated
-USING (
-    user_id = auth.uid()
-    OR friend_id = auth.uid()
-);
+using (((auth.uid() = user_id) OR (auth.uid() = friend_id)))
+with check (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
 
-  create policy "markers_delete_policy"
-  on "public"."markers"
+
+  create policy "friendships_delete_policy"
+  on "public"."friendships"
   as permissive
   for delete
   to authenticated
-using ((user_id = auth.uid()));
-
-
-
-  create policy "markers_insert_policy"
-  on "public"."markers"
-  as permissive
-  for insert
-  to authenticated
-with check ((user_id = auth.uid()));
+using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
 
 
 
@@ -440,21 +348,31 @@ using (((user_id = auth.uid()) OR public.is_marker_shared_with_user(id, auth.uid
 
 
 
+  create policy "markers_insert_policy"
+  on "public"."markers"
+  as permissive
+  for insert
+  to authenticated
+with check ((user_id = auth.uid()));
+
+
+
   create policy "markers_update_policy"
   on "public"."markers"
   as permissive
   for update
   to authenticated
-using ((user_id = auth.uid()));
+using ((user_id = auth.uid()))
+with check ((user_id = auth.uid()));
 
 
 
-  create policy "Profile sind lesbar"
-  on "public"."profiles"
+  create policy "markers_delete_policy"
+  on "public"."markers"
   as permissive
-  for select
+  for delete
   to authenticated
-using (true);
+using ((user_id = auth.uid()));
 
 
 
@@ -522,6 +440,8 @@ using ((auth.uid() = user_id));
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+CREATE TRIGGER on_marker_update_sync BEFORE INSERT OR UPDATE ON public.markers FOR EACH ROW EXECUTE FUNCTION public.sync_marker_position();
+
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('marker-images', 'marker-images', true)
@@ -543,6 +463,16 @@ using ((bucket_id = 'marker-images'::text));
   for insert
   to authenticated
 with check ((bucket_id = 'marker-images'::text));
+
+
+
+  create policy "Authenticated Update"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using (((bucket_id = 'marker-images'::text) AND (auth.uid() = owner)))
+with check (((bucket_id = 'marker-images'::text) AND (auth.uid() = owner)));
 
 
 

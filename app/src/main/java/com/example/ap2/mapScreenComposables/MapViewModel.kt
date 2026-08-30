@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.maplibre.spatialk.geojson.Position
+import kotlinx.coroutines.flow.collect
 
 enum class MapMode {
     DEFAULT,
@@ -68,7 +69,7 @@ class MapViewModel : ViewModel() {
     private fun observeLocalData() {
         val currentUser = supabase.auth.currentUserOrNull()
 
-        // 1. Marker aus Room beobachten
+        // 1. Alle für diesen Nutzer synchronisierten Marker (eigene + geteilte) beobachten
         viewModelScope.launch(Dispatchers.IO) {
             repository.getMarkersFlow().collect { markers ->
                 withContext(Dispatchers.Main) {
@@ -78,7 +79,7 @@ class MapViewModel : ViewModel() {
             }
         }
 
-        // 2. Fog GeoJSON aus Room beobachten (falls User angemeldet)
+        // 2. Fog GeoJSON aus Room beobachten
         if (currentUser != null) {
             viewModelScope.launch(Dispatchers.IO) {
                 repository.getFogFlow(currentUser.id).collect { geoJson ->
@@ -91,7 +92,6 @@ class MapViewModel : ViewModel() {
             }
         }
 
-        // 3. Nebel initial direkt laden & Sync anstoßen
         loadFog()
         repository.triggerBackgroundSync()
     }

@@ -37,17 +37,32 @@ data class PendingDeletedMarkerEntity(
 
 @Dao
 interface MapDao {
+
+    // Nur Marker des aktuellen Nutzers abfragen
     @Query("SELECT * FROM local_markers")
     fun getAllMarkersFlow(): Flow<List<LocalMarkerEntity>>
 
     @Query("SELECT * FROM local_markers WHERE isSynced = 0")
     suspend fun getUnsyncedMarkers(): List<LocalMarkerEntity>
 
+    //Holt alle bisher vom Server synchronisierten Marker zum Abgleich
+    @Query("SELECT * FROM local_markers WHERE isSynced = 1")
+    suspend fun getSyncedMarkers(): List<LocalMarkerEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateMarker(marker: LocalMarkerEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMarkers(markers: List<LocalMarkerEntity>)
+
+    @Query("DELETE FROM local_markers WHERE id = :id")
+    suspend fun deleteMarkerById(id: String)
+
+    @Query("DELETE FROM local_markers")
+    suspend fun clearAllMarkers()
+
+    @Query("DELETE FROM fog_cache")
+    suspend fun clearFogCache()
 
     @Insert
     suspend fun insertPendingFogPoint(point: PendingFogPointEntity)
@@ -63,9 +78,6 @@ interface MapDao {
 
     @Query("SELECT geoJson FROM fog_cache WHERE userId = :userId")
     fun getCachedFogFlow(userId: String): Flow<String?>
-
-    @Query("DELETE FROM local_markers WHERE id = :id")
-    suspend fun deleteMarkerById(id: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
 suspend fun insertPendingDeletedMarker(entity: PendingDeletedMarkerEntity)
