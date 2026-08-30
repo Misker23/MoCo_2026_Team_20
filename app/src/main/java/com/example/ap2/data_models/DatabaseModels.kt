@@ -49,8 +49,10 @@ data class ProfileDto(
 
 @Serializable
 data class FriendDto(
+    val user_id: String? = null,
     val friend_id: String,
     val color: String? = null,
+    val status: String? = null,
     val profiles: ProfileDto? = null,
     val is_online: Boolean? = false
 ) {

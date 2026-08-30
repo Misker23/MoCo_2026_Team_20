@@ -82,6 +82,8 @@ alter table "public"."friendships" add constraint "friendships_friend_id_fkey" F
 
 alter table "public"."friendships" validate constraint "friendships_friend_id_fkey";
 
+alter table "public"."friendships" add constraint "friendships_user_profile_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
 alter table "public"."friendships" add constraint "friendships_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
 
 alter table "public"."friendships" validate constraint "friendships_user_id_fkey";
@@ -262,6 +264,18 @@ grant select on table "public"."profiles" to "authenticated";
 
 grant update on table "public"."profiles" to "authenticated";
 
+grant references on table "public"."profiles" to "service_role";
+
+grant trigger on table "public"."profiles" to "service_role";
+
+grant truncate on table "public"."profiles" to "service_role";
+
+grant references on table "public"."shared_markers" to "anon";
+
+grant trigger on table "public"."shared_markers" to "anon";
+
+grant truncate on table "public"."shared_markers" to "anon";
+
 grant delete on table "public"."shared_markers" to "authenticated";
 
 grant insert on table "public"."shared_markers" to "authenticated";
@@ -300,8 +314,76 @@ using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
   for insert
   to authenticated
 with check ((user_id = auth.uid()));
+grant delete on table "public"."spatial_ref_sys" to "service_role";
 
+grant insert on table "public"."spatial_ref_sys" to "service_role";
 
+grant references on table "public"."spatial_ref_sys" to "service_role";
+
+grant select on table "public"."spatial_ref_sys" to "service_role";
+
+grant trigger on table "public"."spatial_ref_sys" to "service_role";
+
+grant truncate on table "public"."spatial_ref_sys" to "service_role";
+
+grant update on table "public"."spatial_ref_sys" to "service_role";
+
+grant references on table "public"."user_fog" to "anon";
+
+grant trigger on table "public"."user_fog" to "anon";
+
+grant truncate on table "public"."user_fog" to "anon";
+
+grant references on table "public"."user_fog" to "authenticated";
+
+grant trigger on table "public"."user_fog" to "authenticated";
+
+grant truncate on table "public"."user_fog" to "authenticated";
+
+grant references on table "public"."user_fog" to "service_role";
+
+grant trigger on table "public"."user_fog" to "service_role";
+
+grant truncate on table "public"."user_fog" to "service_role";
+
+-- ============================================
+-- FRIENDSHIPS
+-- ============================================
+
+-- Eigene Freundschaften und eingehende Anfragen lesen
+CREATE POLICY "friendships_select_policy"
+ON public.friendships
+FOR SELECT
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
+
+-- Freundschaftsanfragen erstellen:
+-- Der eingeloggte Nutzer muss der Absender sein.
+CREATE POLICY "friendships_insert_policy"
+ON public.friendships
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    user_id = auth.uid()
+);
+
+-- Freundschaftsanfrage annehmen:
+-- Sowohl Absender als auch Empfänger dürfen den Status ändern.
+CREATE POLICY "friendships_update_policy"
+ON public.friendships
+FOR UPDATE
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+)
+WITH CHECK (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
 
   create policy "friendships_select_policy"
   on "public"."friendships"
@@ -319,6 +401,16 @@ using (((auth.uid() = user_id) OR (auth.uid() = friend_id)));
   to authenticated
 using ((user_id = auth.uid()));
 
+-- Freundschaftsanfrage/Freundschaft löschen:
+-- Beide Beteiligten dürfen sie löschen.
+CREATE POLICY "friendships_delete_policy"
+ON public.friendships
+FOR DELETE
+TO authenticated
+USING (
+    user_id = auth.uid()
+    OR friend_id = auth.uid()
+);
 
 
   create policy "markers_delete_policy"
@@ -354,6 +446,15 @@ using (((user_id = auth.uid()) OR public.is_marker_shared_with_user(id, auth.uid
   for update
   to authenticated
 using ((user_id = auth.uid()));
+
+
+
+  create policy "Profile sind lesbar"
+  on "public"."profiles"
+  as permissive
+  for select
+  to authenticated
+using (true);
 
 
 
