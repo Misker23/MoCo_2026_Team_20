@@ -1,4 +1,4 @@
-package com.example.ap2.auth
+package com.example.ap2.authentifyScreenComposables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,13 +16,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ap2.auth.AuthViewModel
 import kotlinx.coroutines.launch
 
 /**
  * Repräsentiert die UI des Authentifizierungsbildschirms.
  * Bietet Eingabemasken für E-Mail, Passwort und (optional bei Registrierung) Benutzernamen.
  *
- * @param viewModel Das zugehörige [AuthViewModel], das den Status verwaltet.
+ * @param viewModel Das zugehörige [com.example.ap2.auth.AuthViewModel], das den Status verwaltet.
  * @param onAuthSuccess Callback für das Navigieren bei erfolgreichem Login/Registrieren.
  */
 @Composable
