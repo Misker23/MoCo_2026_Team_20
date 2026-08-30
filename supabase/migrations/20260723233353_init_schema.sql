@@ -4,6 +4,7 @@ create extension if not exists "postgis" with schema "public";
   create table "public"."profiles" (
     "id" uuid not null,
     "username" text not null,
+    "avatar_url" text,
     "created_at" timestamp with time zone default now()
       );
 
@@ -482,3 +483,44 @@ with check (((bucket_id = 'marker-images'::text) AND (auth.uid() = owner)));
   for delete
   to authenticated
 using (((bucket_id = 'marker-images'::text) AND (auth.uid() = owner)));
+
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+
+  create policy "Public Read Avatars"
+  on "storage"."objects"
+  as permissive
+  for select
+  to public
+using ((bucket_id = 'avatars'::text));
+
+
+
+  create policy "Authenticated Upload Avatars"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check ((bucket_id = 'avatars'::text));
+
+
+
+  create policy "Owner Update Avatars"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using (((bucket_id = 'avatars'::text) AND (auth.uid() = owner)))
+with check (((bucket_id = 'avatars'::text) AND (auth.uid() = owner)));
+
+
+
+  create policy "Owner Delete Avatars"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using (((bucket_id = 'avatars'::text) AND (auth.uid() = owner)));

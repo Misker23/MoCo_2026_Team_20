@@ -44,7 +44,8 @@ data class MapMarkerUiState(
 @Serializable
 data class ProfileDto(
     val id: String,
-    val username: String? = null
+    val username: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null
 )
 
 @Serializable
