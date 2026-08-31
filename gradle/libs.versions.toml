@@ -4,17 +4,17 @@ coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-ktorClientAndroid = "3.5.1"
+ktorClientAndroid = "2.3.12"
 lifecycle = "2.8.7"
 activityCompose = "1.8.0"
 navigation = "2.8.5"
 kotlin = "2.2.10"
 #Mindestens Room 2.7+ notwendig für Kotlin 2.x / K2-Compiler & KSP
-ksp = "2.3.11" #Passend zur Kotlin-Version 2.2.10
+ksp = "2.2.10-2.0.2" #Passend zur Kotlin-Version 2.2.10
 room = "2.8.4"
 kotlinxSerializationJson = "1.11.0"
 composeBom = "2024.10.01"
-postgrestKt = "3.6.0"
+postgrestKt = "2.5.0"
 ui = "1.11.2"
 camerax = "1.4.1"
 foundation = "1.11.4"
@@ -51,6 +51,7 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "postgrestKt" }
 gotrue-kt = { module = "io.github.jan-tennert.supabase:gotrue-kt", version.ref = "postgrestKt" }
+storage-kt = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "postgrestKt" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }

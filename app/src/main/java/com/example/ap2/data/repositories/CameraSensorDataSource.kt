@@ -1,4 +1,4 @@
-package com.example.ap2.sensor_repositories
+package com.example.ap2.data.sensors
 
 import android.content.Context
 import android.net.Uri
@@ -11,50 +11,35 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-//Kamera
+class CameraSensorDataSource(private val context: Context) {
 
-class CameraRepository(private val context: Context) {
-
-    //Pausiert Kamera bis sie genutzt wird
     suspend fun getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
-        // Holt eine Instanz des Providers (asynchron)
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-
-        // Wartet, bis der Provider fertig geladen ist
         cameraProviderFuture.addListener({
-            // Gibt den fertigen Provider an das ViewModel zurück
             continuation.resume(cameraProviderFuture.get())
         }, ContextCompat.getMainExecutor(context))
     }
 
-    //Foto machen
     fun takePhoto(
-        imageCapture: ImageCapture, // Das Werkzeug zum Auslösen
-        executor: Executor,         // Der Thread, auf dem das Speichern läuft
-        onImageCaptured: (Uri) -> Unit, // Erfolg: "Hier ist der Pfad zum Bild"
-        onError: (ImageCaptureException) -> Unit // Fehler: "Etwas ging schief"
+        imageCapture: ImageCapture,
+        executor: Executor,
+        onImageCaptured: (Uri) -> Unit,
+        onError: (ImageCaptureException) -> Unit
     ) {
-        // 1. Speicherort festlegen (Temporäre Datei im Cache des Handys)
         val photoFile = File(
-            context.cacheDir, // Speicher im Cache-Ordner der App
-            "marker_${System.currentTimeMillis()}.jpg" // Eindeutiger Dateiname mit Zeitstempel
+            context.cacheDir,
+            "marker_${System.currentTimeMillis()}.jpg"
         )
-
-        // 2. Einstellungen für die Speicherung (Wohin soll die Datei?)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-        // 3. Den Befehl zum Auslösen geben
         imageCapture.takePicture(
             outputOptions,
             executor,
             object : ImageCapture.OnImageSavedCallback {
-                // Bei Erfolg: Die Datei in eine URI umwandeln und zurückgeben
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val savedUri = Uri.fromFile(photoFile)
-                    onImageCaptured(savedUri)
+                    onImageCaptured(Uri.fromFile(photoFile))
                 }
 
-                // Bei Fehlern (z.B. Speicher voll)
                 override fun onError(exception: ImageCaptureException) {
                     onError(exception)
                 }

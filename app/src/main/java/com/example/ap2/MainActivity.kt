@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ap2.authentifyScreenComposables.AuthScreenCompose
+import com.example.ap2.data.remote.supabase
 import com.example.ap2.friendsScreenComposables.FriendsScreenCompose
 import com.example.ap2.homeScreenComposables.HomeScreen
 import com.example.ap2.mapScreenComposables.MapViewModel

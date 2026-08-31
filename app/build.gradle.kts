@@ -2,10 +2,11 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotlin.android)
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -43,6 +44,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.generateKotlin", "true")
+}
+
 dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation.layout)
@@ -56,7 +61,6 @@ dependencies {
     implementation(libs.androidx.foundation.layout)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.material3)
-    //implementation(libs.androidx.ui)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -66,33 +70,39 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.kotlinx.serialization.json) // Use alias from version catalog
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.maplibre.compose)
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+
     // CameraX
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
-// Supabase und Ktor Client
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.0")
-    implementation("io.ktor:ktor-client-android:2.3.12")
 
-// Datenbank authentifizierung
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.0")
-    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.0")
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    // Supabase und Ktor Client
+    implementation(libs.postgrest.kt)
+    implementation(libs.ktor.client.android)
 
-    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    // Datenbank authentifizierung
+    implementation(libs.gotrue.kt)
+    implementation(libs.storage.kt)
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
 
-// Room Database
+    // Room Database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
     // WorkManager für Hintergrund-Synchronisation
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    implementation("androidx.work:work-rxjava2:2.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("androidx.work:work-rxjava2:2.11.2")
+
+    // Dagger Hilt
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
 }

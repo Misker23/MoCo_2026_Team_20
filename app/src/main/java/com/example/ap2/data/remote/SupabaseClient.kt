@@ -1,4 +1,4 @@
-package com.example.ap2
+package com.example.ap2.data.remote
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest

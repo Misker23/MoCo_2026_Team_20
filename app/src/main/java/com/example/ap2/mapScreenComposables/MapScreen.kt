@@ -31,11 +31,10 @@ import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.spatialk.geojson.Position
 import com.example.ap2.homeScreenComposables.SmallMarkerCompose
-import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data.remote.MarkerDto
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.location.LocationPuck
 import org.maplibre.compose.location.LocationTrackingEffect
-import org.maplibre.compose.location.mostAccurateBearing
 import org.maplibre.compose.location.rememberDefaultLocationProvider
 import org.maplibre.compose.location.rememberDefaultOrientationProvider
 import org.maplibre.compose.location.rememberUserLocationState

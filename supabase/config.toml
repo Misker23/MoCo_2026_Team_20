@@ -17,9 +17,9 @@ openai_api_key = "env(OPENAI_API_KEY)"
 
 [auth]
 site_url = "http://localhost:3000"
-# Stelle sicher, dass diese Redirects mit deiner App-Logik Ã¼bereinstimmen
 additional_redirect_urls = [
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "com.example.ap2://*"
 ]
 jwt_expiry = 3600
 enable_signup = true

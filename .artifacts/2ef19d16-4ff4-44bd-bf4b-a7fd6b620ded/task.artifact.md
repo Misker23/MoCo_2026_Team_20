@@ -1,0 +1,3 @@
+- [x] Disable Room Kotlin code generation in `app/build.gradle.kts`
+- [x] Cleanup hardcoded dependencies in `app/build.gradle.kts`
+- [x] Verify build via `:app:assembleDebug`

@@ -12,7 +12,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import com.example.ap2.R
-import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data.remote.MarkerDto
 
 @Composable
 fun SmallMarkerCompose(

@@ -1,9 +1,17 @@
-package com.example.ap2.repositories
+package com.example.ap2.data.repositories
 
+import com.example.ap2.data.remote.MarkerDto
 import android.content.Context
-import androidx.work.*
-import com.example.ap2.data_models.*
-import com.example.ap2.sync.MapSyncWorker
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.ap2.data.local.AppDatabase
+import com.example.ap2.data.local.LocalMarkerEntity
+import com.example.ap2.data.local.PendingDeletedMarkerEntity
+import com.example.ap2.data.local.PendingFogPointEntity
+import com.example.ap2.data.sync.MapSyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,7 +24,17 @@ class MapRepository(private val context: Context) {
 
     // Nur EINE Instanz von getMarkersFlow()
     fun getMarkersFlow(): Flow<List<MarkerDto>> = dao.getAllMarkersFlow().map { list ->
-        list.map { MarkerDto(it.id, it.userId, it.lat, it.lon, it.description, it.color, it.imageUrl) }
+        list.map {
+            MarkerDto(
+                it.id,
+                it.userId,
+                it.lat,
+                it.lon,
+                it.description,
+                it.color,
+                it.imageUrl
+            )
+        }
     }
 
     fun getFogFlow(userId: String): Flow<String?> = dao.getCachedFogFlow(userId)

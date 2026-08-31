@@ -1,9 +1,7 @@
 package com.example.ap2.homeScreenComposables
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data.remote.MarkerDto
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.*
 

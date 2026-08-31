@@ -1,6 +1,5 @@
 package com.example.ap2.homeScreenComposables
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage // Wichtig für Bilder[cite: 1]
-import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data.remote.MarkerDto
 
 /**
  * Eine kompakte Vorschau-Karte (Sneak Peek) am unteren Bildschirmrand.

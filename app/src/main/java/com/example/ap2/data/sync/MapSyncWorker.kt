@@ -1,14 +1,14 @@
-package com.example.ap2.sync
+package com.example.ap2.data.sync
 
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.ap2.data_models.AppDatabase
-import com.example.ap2.data_models.FogCacheEntity
-import com.example.ap2.data_models.LocalMarkerEntity
-import com.example.ap2.data_models.MarkerDto
-import com.example.ap2.supabase
+import com.example.ap2.data.local.AppDatabase
+import com.example.ap2.data.local.FogCacheEntity
+import com.example.ap2.data.local.LocalMarkerEntity
+import com.example.ap2.data.remote.MarkerDto
+import com.example.ap2.data.remote.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc

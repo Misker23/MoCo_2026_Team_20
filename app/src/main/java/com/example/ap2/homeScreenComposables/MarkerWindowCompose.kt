@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.AlertDialog // NEU
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults // NEU
@@ -35,8 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
-import com.example.ap2.data_models.MarkerDto
-import androidx.core.graphics.toColorInt
+import com.example.ap2.data.remote.MarkerDto
 
 @Composable
 fun MarkerWindow(

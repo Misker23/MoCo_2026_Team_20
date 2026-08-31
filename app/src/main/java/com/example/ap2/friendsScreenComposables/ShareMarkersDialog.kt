@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data.remote.MarkerDto
 
 /**
  * Ein Auswahldialog zur Freigabe eigener Marker an einen bestimmten Freund.

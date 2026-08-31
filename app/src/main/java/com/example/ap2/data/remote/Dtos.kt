@@ -1,4 +1,4 @@
-package com.example.ap2.data_models
+package com.example.ap2.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,18 +27,6 @@ data class MarkerDto(
 data class FriendColorDto(
     val friend_id: String,
     val color: String?
-)
-
-// Fertiges UI-Modell für eine Map/Compose
-data class MapMarkerUiState(
-    val id: String,
-    val creatorId: String,
-    val lat: Double,
-    val lon: Double,
-    val description: String?,
-    val imageUrl: String? = null, // Ergänzt, damit Bilder auf der Karte verfügbar bleiben
-    val displayColor: String,     // Die finale Farbe (eigene Marker-Farbe ODER Freundes-Farbe)
-    val isOwnMarker: Boolean
 )
 
 @Serializable

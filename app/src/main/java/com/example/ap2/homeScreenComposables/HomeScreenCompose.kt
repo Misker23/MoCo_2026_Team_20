@@ -4,27 +4,20 @@ import android.content.Context
 import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ap2.R
 import com.example.ap2.mapScreenComposables.MapMode
 import com.example.ap2.mapScreenComposables.MapScreen
 import com.example.ap2.mapScreenComposables.MapViewModel
-import com.example.ap2.sensor_repositories.MotionRepository
-import com.example.ap2.supabase
+import com.example.ap2.data.repositories.SensorRepository
+import com.example.ap2.data.remote.supabase
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
@@ -51,7 +44,7 @@ fun HomeScreen(
         remember { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
 
     // 1. Initialisierung Sensoren
-    val motionRepo = remember { MotionRepository(context) }
+    val motionRepo = remember { SensorRepository(context) }
     var compassDegree by remember { mutableFloatStateOf(0f) }
 
     // 2. Initialer Start: Repository laden & Sensoren abonnieren

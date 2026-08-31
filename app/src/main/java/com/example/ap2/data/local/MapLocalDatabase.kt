@@ -1,39 +1,8 @@
-package com.example.ap2.data_models
+package com.example.ap2.data.local
 
 import android.content.Context
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
-
-@Entity(tableName = "local_markers")
-data class LocalMarkerEntity(
-    @PrimaryKey val id: String,
-    val userId: String,
-    val lat: Double,
-    val lon: Double,
-    val description: String?,
-    val color: String?,
-    val imageUrl: String?,
-    val isSynced: Boolean = false
-)
-
-@Entity(tableName = "pending_fog_points")
-data class PendingFogPointEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val lat: Double,
-    val lon: Double,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-@Entity(tableName = "fog_cache")
-data class FogCacheEntity(
-    @PrimaryKey val userId: String,
-    val geoJson: String
-)
-
-@Entity(tableName = "pending_deleted_markers")
-data class PendingDeletedMarkerEntity(
-    @PrimaryKey val id: String
-)
 
 @Dao
 interface MapDao {
@@ -109,8 +78,12 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile private var INSTANCE: AppDatabase? = null
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "moco_map_db")
-                    .fallbackToDestructiveMigration() // Verhindert Abstürze bei Datenbank-Schema-Änderungen
+                Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "moco_map_db"
+                )
+                    .fallbackToDestructiveMigration(false) // Verhindert Abstürze bei Datenbank-Schema-Änderungen
                     .build().also { INSTANCE = it }
             }
         }
