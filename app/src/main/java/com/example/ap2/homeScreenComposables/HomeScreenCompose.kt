@@ -187,29 +187,37 @@ fun HomeScreen(
 
             // POPUPS & DIALOGE
             if (isMarkerWindowVisable) {
+                val currentUserId = supabase.auth.currentUserOrNull()?.id
+                val isOwn = viewModel.selectedMarker?.user_id == currentUserId
+
                 MarkerWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
                     markerDto = viewModel.selectedMarker,
+                    isOwnMarker = isOwn, // NEU
                     onDismiss = {
                         isMarkerWindowVisable = false
                         isSneakPeekVisible = false
                     },
                     onSave = { updatedDescription, updatedColor, newImageBytes ->
-                        viewModel.selectedMarker?.let { currentMarker ->
-                            viewModel.updateMarkerWithImage(
-                                markerId = currentMarker.id ?: "",
-                                description = updatedDescription,
-                                color = updatedColor,
-                                oldImageUrl = currentMarker.image_url,
-                                newImageBytes = newImageBytes
-                            )
+                        if (isOwn) { // Sicherheitsprüfung
+                            viewModel.selectedMarker?.let { currentMarker ->
+                                viewModel.updateMarkerWithImage(
+                                    markerId = currentMarker.id ?: "",
+                                    description = updatedDescription,
+                                    color = updatedColor,
+                                    oldImageUrl = currentMarker.image_url,
+                                    newImageBytes = newImageBytes
+                                )
+                            }
                         }
                     },
                     onDelete = {
-                        viewModel.selectedMarker?.let { currentMarker ->
-                            viewModel.deleteMarker(currentMarker.id ?: "")
-                            isMarkerWindowVisable = false
-                            isSneakPeekVisible = false
+                        if (isOwn) { // Sicherheitsprüfung
+                            viewModel.selectedMarker?.let { currentMarker ->
+                                viewModel.deleteMarker(currentMarker.id ?: "")
+                                isMarkerWindowVisable = false
+                                isSneakPeekVisible = false
+                            }
                         }
                     }
                 )

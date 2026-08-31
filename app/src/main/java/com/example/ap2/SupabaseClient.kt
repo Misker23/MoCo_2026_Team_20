@@ -8,7 +8,7 @@ import io.github.jan.supabase.serializer.KotlinXSerializer
 import kotlinx.serialization.json.Json
 
 val supabase = createSupabaseClient(
-    supabaseUrl = "http://192.168.2.30:8000",
+    supabaseUrl = "http://192.168.188.105:8000",
     supabaseKey = "850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907"
 ) {
     install(Postgrest) {

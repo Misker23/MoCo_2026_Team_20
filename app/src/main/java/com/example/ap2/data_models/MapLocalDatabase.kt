@@ -73,6 +73,9 @@ interface MapDao {
     @Query("DELETE FROM pending_fog_points WHERE id IN (:ids)")
     suspend fun deletePendingFogPoints(ids: List<Long>)
 
+    @Query("DELETE FROM pending_fog_points")
+    suspend fun clearPendingFogPoints()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun cacheFog(fogCache: FogCacheEntity)
 

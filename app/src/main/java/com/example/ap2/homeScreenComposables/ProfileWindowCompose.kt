@@ -2,6 +2,7 @@ package com.example.ap2.homeScreenComposables
 
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -256,14 +258,23 @@ fun ProfileWindow(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            supabase.auth.signOut()
-                            onLogout() // Bringt den User zurück zum AuthScreen
+                            // 1. Lokale Daten und ViewModel-State des aktuellen Nutzers zurücksetzen
+                            viewModel.resetUserDataOnLogout(context)
+
+                            // 2. Supabase Logout durchführen
+                            try {
+                                supabase.auth.signOut()
+                            } catch (e: Exception) {
+                                Log.e("ProfileWindow", "Fehler beim Logout: ${e.message}")
+                            }
+
+                            onLogout()
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color.Red)
+                    colors = ButtonDefaults.buttonColors(Color.Red)
                 ) {
                     Text("Abmelden", color = Color.Black)
                 }

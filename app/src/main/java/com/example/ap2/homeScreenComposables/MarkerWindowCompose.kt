@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
@@ -41,6 +42,7 @@ import androidx.core.graphics.toColorInt
 fun MarkerWindow(
     bottomPadding: Dp,
     markerDto: MarkerDto?,
+    isOwnMarker: Boolean, // NEU: Prüft Eigentum
     onDismiss: () -> Unit,
     onSave: (String, String, ByteArray?) -> Unit,
     onDelete: () -> Unit
@@ -49,11 +51,6 @@ fun MarkerWindow(
     var description by remember(markerDto) { mutableStateOf(markerDto?.description ?: "") }
     var selectedColor by remember(markerDto) { mutableStateOf(markerDto?.color ?: "#E91E63") }
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
-
-    val currentAccentColor = remember(selectedColor) {
-        try { Color(selectedColor.toColorInt()) } catch (e: Exception) { Color(0xFFE91E63) }
-    }
-
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val previewBitmap = remember(selectedImageBytes) {
@@ -63,9 +60,11 @@ fun MarkerWindow(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            try { selectedImageBytes = context.contentResolver.openInputStream(it)?.readBytes() }
-            catch (e: Exception) { e.printStackTrace() }
+        if (isOwnMarker) { // Nur für den Eigentümer
+            uri?.let {
+                try { selectedImageBytes = context.contentResolver.openInputStream(it)?.readBytes() }
+                catch (e: Exception) { e.printStackTrace() }
+            }
         }
     }
 
@@ -74,7 +73,6 @@ fun MarkerWindow(
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
-        // HIER: Das Styling ist jetzt nur einmal auf der äußeren Column
         Column(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
@@ -87,9 +85,9 @@ fun MarkerWindow(
             // Bild-Bereich
             Box(
                 modifier = Modifier
-                    .size(200.dp, 200.dp) // Leicht verkleinert, damit mehr Platz für Text ist
+                    .size(200.dp, 200.dp)
                     .background(Color.Gray, RoundedCornerShape(12.dp))
-                    .clickable { galleryLauncher.launch("image/*") },
+                    .clickable(enabled = isOwnMarker) { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 when {
@@ -99,88 +97,97 @@ fun MarkerWindow(
                     !markerDto?.image_url.isNullOrEmpty() -> {
                         AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
-                    else -> { Text("Bild hinzufügen", color = Color.White) }
+                    else -> { Text(if (isOwnMarker) "Bild hinzufügen" else "Kein Bild", color = Color.White) }
                 }
             }
 
-            val extendedColorPalette = listOf(
-                "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3",
-                "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A",
-                "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722",
-                "#795548", "#9E9E9E", "#607D8B"
-            )
+            if (isOwnMarker) {
+                // Farbe wählen nur für Eigentümer
+                val extendedColorPalette = listOf(
+                    "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3",
+                    "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A",
+                    "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"
+                )
 
-            Text("Marker-Farbe wählen:", color = MaterialTheme.colorScheme.secondary)
+                Text("Marker-Farbe wählen:", color = MaterialTheme.colorScheme.secondary)
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(extendedColorPalette) { hexColor ->
-                    val composeColor = Color(android.graphics.Color.parseColor(hexColor))
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(composeColor, CircleShape)
-                            .border(
-                                width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
-                                color = MaterialTheme.colorScheme.primary, // Border auf Weiß geändert für Darkmode
-                                shape = CircleShape
-                            )
-                            .clickable { selectedColor = hexColor }
-                    )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(extendedColorPalette) { hexColor ->
+                        val composeColor = Color(android.graphics.Color.parseColor(hexColor))
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .background(composeColor, CircleShape)
+                                .border(
+                                    width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedColor = hexColor }
+                        )
+                    }
                 }
             }
 
             TextField(
                 value = description,
-                onValueChange = { description = it },
+                onValueChange = { if (isOwnMarker) description = it },
+                enabled = isOwnMarker, // Für Empfänger gesperrt
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                label = { Text("Beschreibung", color = MaterialTheme.colorScheme.secondary)},
+                label = { Text("Beschreibung", color = MaterialTheme.colorScheme.secondary) },
                 colors = TextFieldDefaults.colors(
                     cursorColor = MaterialTheme.colorScheme.secondary,
-                    selectionColors = TextSelectionColors(
-                        handleColor = MaterialTheme.colorScheme.secondary,
-                        backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
-                    ),
                     focusedTextColor = MaterialTheme.colorScheme.secondary,
                     unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    disabledTextColor = MaterialTheme.colorScheme.secondary,
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
 
-            // Button-Reihe (Einfache Column ohne Modifiers)
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Button(
-                    onClick = {
-                        onSave(description, selectedColor, selectedImageBytes)
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+            // Buttons nur für Eigentümer anzeigen
+            if (isOwnMarker) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Änderungen speichern", color = Color.Black)
-                }
+                    Button(
+                        onClick = {
+                            onSave(description, selectedColor, selectedImageBytes)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    ) {
+                        Text("Änderungen speichern", color = Color.Black)
+                    }
 
-                Button(
-                    onClick = { showDeleteConfirmation = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Marker löschen", color = Color.Black)
+                    Button(
+                        onClick = { showDeleteConfirmation = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
+                        Text("Marker löschen", color = Color.Black)
+                    }
                 }
+            } else {
+                Text(
+                    text = "Geteilter Marker (Nur Lesezugriff)",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }
 
-    // Die zusätzliche Sicherheitsabfrage als AlertDialog
-    if (showDeleteConfirmation) {
+    if (showDeleteConfirmation && isOwnMarker) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = { Text("Marker löschen?") },
@@ -192,8 +199,8 @@ fun MarkerWindow(
                 OutlinedButton(
                     onClick = {
                         showDeleteConfirmation = false
-                        onDelete() // Führt Löschvorgang aus
-                        onDismiss() // Schließt das Marker-Fenster
+                        onDelete()
+                        onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {

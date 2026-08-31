@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ap2.data_models.AppDatabase
 import com.example.ap2.data_models.MapMarkerUiState
 import com.example.ap2.data_models.MarkerDto
 import com.example.ap2.data_models.ProfileDto
@@ -26,7 +27,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.maplibre.spatialk.geojson.Position
-import kotlinx.coroutines.flow.collect
 
 enum class MapMode {
     DEFAULT,
@@ -213,6 +213,12 @@ class MapViewModel : ViewModel() {
     }
 
     fun deleteMarker(id: String) {
+        val currentUser = supabase.auth.currentUserOrNull() ?: return
+        val targetMarker = markerList.find { it.id == id }
+
+        // Nur der Eigentümer darf löschen
+        if (targetMarker?.user_id != currentUser.id) return
+
         selectedMarker = null
         viewModelScope.launch(Dispatchers.IO) {
             if (::repository.isInitialized) {
@@ -362,6 +368,25 @@ class MapViewModel : ViewModel() {
                 supabase.postgrest.rpc("ensure_user_fog")
                 loadFog()
             } catch (e: Exception) { /* ... */ }
+        }
+    }
+
+    fun resetUserDataOnLogout(context: Context) {
+        // 1. In-Memory Zustand leeren
+        fogGeoJson = null
+        lastFogPosition = null
+        currentUserProfile = null
+        selectedMarker = null
+        temporaryPosition = null
+        totalDistance = 0f
+        markerList.clear()
+
+        // 2. Lokale Room-Datenbank säubern
+        viewModelScope.launch(Dispatchers.IO) {
+            val dao = AppDatabase.getDatabase(context.applicationContext).mapDao()
+            dao.clearAllMarkers()
+            dao.clearFogCache()
+            dao.clearPendingFogPoints()
         }
     }
 

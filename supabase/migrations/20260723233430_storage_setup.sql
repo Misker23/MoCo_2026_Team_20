@@ -4,10 +4,10 @@ VALUES ('marker-images', 'marker-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Alte Storage Policies aufräumen
-DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated Upload" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated Update" ON storage.objects;
-DROP POLICY IF EXISTS "Owner Delete" ON storage.objects;
+DROP POLICY IF EXISTS "Public Read Avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Upload Avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Owner Update Avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Owner Delete Avatars" ON storage.objects;
 
 -- 1. Öffentlich lesen
 CREATE POLICY "Public Read Access"

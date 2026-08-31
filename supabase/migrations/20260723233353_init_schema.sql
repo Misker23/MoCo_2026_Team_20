@@ -215,16 +215,23 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-begin
-  insert into public.profiles (id, username)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))
-  );
-  return new;
-end;
-$function$
-;
+DECLARE
+  base_username text;
+  final_username text;
+BEGIN
+  base_username := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
+  final_username := base_username;
+
+  WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = final_username) LOOP
+    final_username := base_username || floor(random() * 1000)::text;
+  END LOOP;
+
+  INSERT INTO public.profiles (id, username)
+  VALUES (new.id, final_username);
+
+  RETURN new;
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_marker_owner(p_marker_id uuid, p_user_id uuid)
  RETURNS boolean
