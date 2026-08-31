@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
@@ -71,8 +72,7 @@ fun POIWindow(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
                 .size(360.dp, 520.dp) // Leicht vergrößert für besseren Formfaktor
-                .background(Color(0xFF1A1A1A).copy(alpha = 0.96f), RoundedCornerShape(24.dp)) // Modernere, rundere Ecken
-                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(24.dp)) // Modernere, rundere Ecken
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -86,7 +86,7 @@ fun POIWindow(
 
             Text(
                 text = "Points of Interest",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -100,13 +100,9 @@ fun POIWindow(
                     val isSelected = selectedCategory == category
                     SuggestionChip(
                         onClick = { selectedCategory = category },
-                        label = { Text(category, color = if (isSelected) Color.Black else Color.White, fontWeight = FontWeight.Medium) },
+                        label = { Text(category, color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Medium) },
                         colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = if (isSelected) Color.White else Color(0xFF2D2D2D)
-                        ),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isSelected) Color.White else Color.Transparent
+                            containerColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.tertiary
                         )
                     )
                 }
@@ -123,7 +119,7 @@ fun POIWindow(
                 if (filteredMarkers.isEmpty()) {
                     item {
                         Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                            Text("Keine Einträge in dieser Kategorie.", color = Color.Gray)
+                            Text("Keine Einträge in dieser Kategorie.", color = MaterialTheme.colorScheme.tertiary)
                         }
                     }
                 } else {
@@ -166,7 +162,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.07f)), // Dezenterer Kontrast
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), // Dezenterer Kontrast
         shape = RoundedCornerShape(14.dp) // Weichere Kanten für die Karten
     ) {
         Row(
@@ -190,7 +186,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
                 ) {
                     Text(
                         text = marker.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Namen",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         maxLines = 1,
@@ -202,7 +198,7 @@ fun PoiCard(marker: MarkerDto, userPosition: Position, isOwnMarker: Boolean, onC
 
                     Text(
                         text = distanceText,
-                        color = Color.LightGray,
+                        color = MaterialTheme.colorScheme.tertiary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1 // Verhindert vertikales Umbrechen komplett

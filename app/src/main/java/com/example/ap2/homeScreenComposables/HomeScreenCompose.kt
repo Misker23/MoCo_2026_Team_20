@@ -1,5 +1,7 @@
 package com.example.ap2.homeScreenComposables
 
+import android.content.Context
+import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +33,7 @@ import org.maplibre.spatialk.geojson.Position
 
 @Composable
 fun HomeScreen(
-    viewModel: MapViewModel = viewModel(),
+    viewModel: MapViewModel,
     onNavigateToFriends: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -45,31 +47,34 @@ fun HomeScreen(
     )
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val windowManager =
+        remember { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
 
     // 1. Initialisierung Sensoren
     val motionRepo = remember { MotionRepository(context) }
-    var steps by remember { mutableFloatStateOf(0f) }
     var compassDegree by remember { mutableFloatStateOf(0f) }
 
     // 2. Initialer Start: Repository laden & Sensoren abonnieren
     LaunchedEffect(Unit) {
         viewModel.initRepository(context)
-
-        // Schritte sammeln
-        launch {
-            motionRepo.getStepCountUpdates().collect { newSteps ->
-                steps = newSteps
-            }
-        }
+        viewModel.loadMarkersForMap()
+        viewModel.fetchCurrentUserProfile()
 
         // Kompass sammeln
         launch {
-            motionRepo.getCompassUpdates().collect { azimuth ->
-                compassDegree = azimuth
+            motionRepo.getRotationUpdates().collect { azimuth ->
+                val rotation = windowManager.defaultDisplay.rotation
+                val rotationDegrees = when (rotation) {
+                    android.view.Surface.ROTATION_90 -> 90f
+                    android.view.Surface.ROTATION_180 -> 180f
+                    android.view.Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+                val correctedBearing = (-(azimuth + rotationDegrees) + 360) % 360
+                compassDegree = correctedBearing
+                viewModel.userBearing = correctedBearing
             }
         }
-
-        viewModel.loadMarkersForMap()
     }
 
     var isMarkerWindowVisable by remember { mutableStateOf(false) }
@@ -87,21 +92,38 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                POIButton(
-                    onClick = { isPoiWindowVisable = true },
-                    modifier = Modifier.weight(1f)
-                )
-                FriendsButton(
-                    onClick = { onNavigateToFriends() },
-                    modifier = Modifier.weight(1f)
-                )
-                SettingButton(
-                    onClick = { isSettingWindowVisable = true },
-                    modifier = Modifier.weight(1f)
-                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    POIButton(
+                        onClick = {isPoiWindowVisable = true},
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    FriendsButton(
+                        onClick = {onNavigateToFriends()},
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SettingButton(
+                        onClick = {isSettingWindowVisable = true},
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    )
+                }
             }
         },
 
@@ -143,79 +165,9 @@ fun HomeScreen(
             if (viewModel.currentMode == MapMode.DEFAULT) {
                 ProfileButton(
                     onLogout = onLogout,
-                    modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                    modifier = Modifier,
+                    viewModel = viewModel
                 )
-            }
-
-            // KOMPASS & SCHRITTE
-            if (viewModel.currentMode == MapMode.DEFAULT) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Schritte: ${steps.toInt()}",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_place_24),
-                        contentDescription = "Kompass",
-                        tint = Color.Red,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .rotate(-compassDegree)
-                    )
-
-                    Text(
-                        text = "${compassDegree.toInt()}°",
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-
-            // PLATZIERUNGS-MODUS OVERLAY
-            if (viewModel.currentMode == MapMode.CONFIRMING || viewModel.currentMode == MapMode.PLACING_MARKER) {
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(24.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { viewModel.cancelPlacing() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Abbrechen", tint = Color.Red)
-                    }
-
-                    Text(
-                        text = if (viewModel.currentMode == MapMode.CONFIRMING) "Position gewählt" else "Marker-Position wählen",
-                        color = Color.White,
-                        fontSize = 14.sp
-                    )
-
-                    if (viewModel.currentMode == MapMode.CONFIRMING) {
-                        IconButton(
-                            onClick = {
-                                viewModel.confirmMarker(context)
-                            }
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = "Bestätigen", tint = Color.Green)
-                        }
-                    }
-                }
             }
 
             // SNEAK PEEK DIALOG
@@ -291,7 +243,8 @@ fun HomeScreen(
             if (isSettingWindowVisable) {
                 SettingWindow(
                     bottomPadding = contentPadding.calculateBottomPadding() + 10.dp,
-                    onDismiss = { isSettingWindowVisable = false }
+                    onDismiss = { isSettingWindowVisable = false },
+                    viewModel = viewModel
                 )
             }
         }

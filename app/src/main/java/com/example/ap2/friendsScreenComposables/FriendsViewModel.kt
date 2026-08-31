@@ -2,7 +2,9 @@ package com.example.ap2.friendsScreenComposables
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.ap2.data_models.FriendDto
 import com.example.ap2.data_models.MarkerDto
 import com.example.ap2.data_models.ProfileDto
@@ -11,6 +13,11 @@ import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * ViewModel zur Verwaltung von Freundschaften und der Freigabe von Markern an Freunde.
@@ -32,6 +39,26 @@ class FriendsViewModel : ViewModel() {
 
     /** Enthält die Marker-IDs, die aktuell für den ausgewählten Freund freigegeben sind. */
     val currentFriendSharedMarkerIds = mutableStateListOf<String>()
+
+    private val _searchText = MutableStateFlow("")
+    val searchText = _searchText.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching = _isSearching.asStateFlow()
+
+    val filteredFriends = searchText
+        .combine(snapshotFlow { friendsList.toList() }) { text, friends ->
+            if (text.isBlank()) {
+                friends
+            } else {
+                friends.filter { it.displayName.contains(text, ignoreCase = true) }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     /**
      * Lädt alle bestätigten Freundschaften (`status = 'accepted'`) des Nutzers aus Supabase,
@@ -446,5 +473,9 @@ class FriendsViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("FriendsViewModel", "Fehler beim Speichern der Freigaben: ${e.message}")
         }
+    }
+
+    fun onSearchQueryChange(newQuery: String) {
+        _searchText.value = newQuery
     }
 }

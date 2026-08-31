@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ap2.authentifyScreenComposables.AuthScreenCompose
 import com.example.ap2.friendsScreenComposables.FriendsScreenCompose
 import com.example.ap2.homeScreenComposables.HomeScreen
+import com.example.ap2.mapScreenComposables.MapViewModel
 import com.example.ap2.ui.theme.MoCo_2026Theme
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
@@ -40,11 +42,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val viewModel: MapViewModel by viewModels()
+
         requestLocationPermission()
         enableEdgeToEdge()
 
         setContent {
-            MoCo_2026Theme {
+            MoCo_2026Theme(darkTheme = viewModel.isDarkMode) {
                 val coroutineScope = rememberCoroutineScope()
 
                 // Liest die gecachte Sitzung beim App-Start (Offline & Online funktionsfähig)
@@ -61,6 +65,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable<HomeRoute> {
                             HomeScreen(
+                                viewModel = viewModel,
                                 onNavigateToFriends = {
                                     navController.navigate(FriendsRoute)
                                 },

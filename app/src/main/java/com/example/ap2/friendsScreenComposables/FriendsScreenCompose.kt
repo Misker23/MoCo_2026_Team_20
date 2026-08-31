@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 import com.example.ap2.data_models.FriendDto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 
 @Composable
 fun FriendsScreenCompose(
@@ -37,6 +39,8 @@ fun FriendsScreenCompose(
     val coroutineScope = rememberCoroutineScope()
     var showAddDialog by remember { mutableStateOf(false) }
     var friendForSharing by remember { mutableStateOf<FriendDto?>(null) }
+    val searchText by viewModel.searchText.collectAsState()
+    val filteredFriends by viewModel.filteredFriends.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchFriends()
@@ -50,7 +54,7 @@ fun FriendsScreenCompose(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A))
+            .background(MaterialTheme.colorScheme.primary)
             .systemBarsPadding()
             .padding(16.dp)
     ) {
@@ -68,15 +72,15 @@ fun FriendsScreenCompose(
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Zurück zum Hauptbildschirm",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
 
                 Text(
                     text = "Deine Freunde",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -92,6 +96,28 @@ fun FriendsScreenCompose(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(
+                value = searchText,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                placeholder = { Text("Suche") },
+                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    cursorColor = MaterialTheme.colorScheme.secondary,
+                    selectionColors = TextSelectionColors(
+                        handleColor = MaterialTheme.colorScheme.secondary,
+                        backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                    ),
+                    focusedIndicatorColor = Color.LightGray,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // --- FREUNDSCHAFTSANFRAGEN + FREUNDESLISTE ---
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -103,7 +129,7 @@ fun FriendsScreenCompose(
                     item {
                         Text(
                             text = "Freundschaftsanfragen",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.secondary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -133,7 +159,7 @@ fun FriendsScreenCompose(
                     item {
                         Text(
                             text = "Ausstehende Anfragen",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.secondary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(
@@ -160,7 +186,7 @@ fun FriendsScreenCompose(
                 item {
                     Text(
                         text = "Deine Freunde",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(
@@ -173,14 +199,18 @@ fun FriendsScreenCompose(
                 // Freunde
                 if (viewModel.friendsList.isEmpty()) {
                     item {
-                        Text(
-                            text = "Du hast noch keine Freunde.",
-                            color = Color.Gray,
-                            fontSize = 14.sp
-                        )
+                        Box(modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                            ){
+                            Text(
+                                text = "Du hast noch keine Freunde.",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 } else {
-                    items(viewModel.friendsList) { friend: FriendDto ->
+                    items(filteredFriends) { friend: FriendDto ->
 
                         FriendCardItem(
                             friend = friend,
@@ -245,7 +275,7 @@ fun FriendCardItem(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.07f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -280,7 +310,7 @@ fun FriendCardItem(
                 Column {
                     Text(
                         text = friend.displayName,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp
                     )
@@ -323,7 +353,7 @@ fun FriendRequestItem(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.07f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
@@ -336,7 +366,7 @@ fun FriendRequestItem(
 
             Text(
                 text = "${request.displayName} möchte mit dir befreundet sein.",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -348,9 +378,10 @@ fun FriendRequestItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                Button(
+                OutlinedButton(
                     onClick = onAccept,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(Color.Green)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -359,12 +390,13 @@ fun FriendRequestItem(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    Text("Annehmen")
+                    Text("Annehmen", color = Color.Black)
                 }
 
                 OutlinedButton(
                     onClick = onReject,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(Color.Red)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -373,7 +405,7 @@ fun FriendRequestItem(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    Text("Ablehnen")
+                    Text("Ablehnen", color = Color.Black)
                 }
             }
         }
@@ -387,7 +419,7 @@ fun SentFriendRequestItem(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.07f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
@@ -400,7 +432,7 @@ fun SentFriendRequestItem(
 
             Text(
                 text = "Anfrage an ${request.displayName}",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -409,7 +441,7 @@ fun SentFriendRequestItem(
 
             Text(
                 text = "Wartet auf Annahme",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.tertiary,
                 fontSize = 12.sp
             )
 
@@ -417,7 +449,8 @@ fun SentFriendRequestItem(
 
             OutlinedButton(
                 onClick = onCancel,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(Color.Red)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -426,7 +459,7 @@ fun SentFriendRequestItem(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                Text("Anfrage abbrechen")
+                Text("Anfrage abbrechen", color = Color.Black)
             }
         }
     }
@@ -450,12 +483,23 @@ fun AddFriendDialog(
     )
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.primary,
         onDismissRequest = onDismiss,
         title = { Text("Freund hinzufügen") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = usernameInput,
+                    colors = TextFieldDefaults.colors(
+                        cursorColor = MaterialTheme.colorScheme.secondary,
+                        selectionColors = TextSelectionColors(
+                            handleColor = MaterialTheme.colorScheme.secondary,
+                            backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                        ),
+                        focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedTextColor = MaterialTheme.colorScheme.secondary,
+                        focusedLabelColor = MaterialTheme.colorScheme.secondary,
+                    ),
                     onValueChange = {
                         usernameInput = it
                         errorMessage = null
@@ -476,7 +520,7 @@ fun AddFriendDialog(
                     )
                 }
 
-                Text("Marker-Farbe wählen:", fontSize = 12.sp)
+                Text("Marker-Farbe wählen:", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(colorPalette) { hex ->
@@ -487,7 +531,7 @@ fun AddFriendDialog(
                                 .background(color, CircleShape)
                                 .border(
                                     width = if (selectedColor == hex) 3.dp else 0.dp,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.primary,
                                     shape = CircleShape
                                 )
                                 .clickable { selectedColor = hex }
@@ -497,8 +541,9 @@ fun AddFriendDialog(
             }
         },
         confirmButton = {
-            Button(
+            OutlinedButton(
                 enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                 onClick = {
                     coroutineScope.launch {
                         isLoading = true
@@ -513,15 +558,18 @@ fun AddFriendDialog(
                 }
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF2196F3))
                 } else {
-                    Text("Hinzufügen")
+                    Text("Hinzufügen", color = Color.Black)
                 }
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Abbrechen")
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(Color.Red)
+                ) {
+                Text("Abbrechen", color = Color.Black)
             }
         }
     )

@@ -13,12 +13,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.AlertDialog // NEU
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults // NEU
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton // NEU
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,8 +79,7 @@ fun MarkerWindow(
             modifier = Modifier
                 .padding(bottom = bottomPadding)
                 .size(350.dp, 650.dp)
-                .background(Color(0xFF1A1A1A).copy(alpha = 0.96f), RoundedCornerShape(24.dp))
-                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(24.dp))
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -86,7 +88,7 @@ fun MarkerWindow(
             Box(
                 modifier = Modifier
                     .size(200.dp, 200.dp) // Leicht verkleinert, damit mehr Platz für Text ist
-                    .background(Color.Black, RoundedCornerShape(12.dp))
+                    .background(Color.Gray, RoundedCornerShape(12.dp))
                     .clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
@@ -97,7 +99,7 @@ fun MarkerWindow(
                     !markerDto?.image_url.isNullOrEmpty() -> {
                         AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
-                    else -> { Text("Bild hinzufügen", color = Color.Gray) }
+                    else -> { Text("Bild hinzufügen", color = Color.White) }
                 }
             }
 
@@ -108,7 +110,7 @@ fun MarkerWindow(
                 "#795548", "#9E9E9E", "#607D8B"
             )
 
-            Text("Marker-Farbe wählen:", color = Color.White)
+            Text("Marker-Farbe wählen:", color = MaterialTheme.colorScheme.secondary)
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -122,7 +124,7 @@ fun MarkerWindow(
                             .background(composeColor, CircleShape)
                             .border(
                                 width = if (selectedColor.lowercase() == hexColor.lowercase()) 3.dp else 0.dp,
-                                color = Color.White, // Border auf Weiß geändert für Darkmode
+                                color = MaterialTheme.colorScheme.primary, // Border auf Weiß geändert für Darkmode
                                 shape = CircleShape
                             )
                             .clickable { selectedColor = hexColor }
@@ -134,7 +136,19 @@ fun MarkerWindow(
                 value = description,
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Beschreibung") }
+                shape = RoundedCornerShape(12.dp),
+                label = { Text("Beschreibung", color = MaterialTheme.colorScheme.secondary)},
+                colors = TextFieldDefaults.colors(
+                    cursorColor = MaterialTheme.colorScheme.secondary,
+                    selectionColors = TextSelectionColors(
+                        handleColor = MaterialTheme.colorScheme.secondary,
+                        backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                    ),
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                )
             )
 
             // Button-Reihe (Einfache Column ohne Modifiers)
@@ -151,15 +165,15 @@ fun MarkerWindow(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                 ) {
-                    Text("Änderungen speichern", color = if (selectedColor.lowercase() == "#ffeb3b") Color.Black else Color.White)
+                    Text("Änderungen speichern", color = Color.Black)
                 }
 
                 Button(
                     onClick = { showDeleteConfirmation = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Marker löschen", color = Color.White)
+                    Text("Marker löschen", color = Color.Black)
                 }
             }
         }
@@ -171,21 +185,27 @@ fun MarkerWindow(
             onDismissRequest = { showDeleteConfirmation = false },
             title = { Text("Marker löschen?") },
             text = { Text("Bist du dir sicher, dass du diesen Marker dauerhaft aus der Datenbank entfernen möchtest?") },
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.secondary,
+            textContentColor = MaterialTheme.colorScheme.secondary,
             confirmButton = {
-                Button(
+                OutlinedButton(
                     onClick = {
                         showDeleteConfirmation = false
                         onDelete() // Führt Löschvorgang aus
                         onDismiss() // Schließt das Marker-Fenster
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Löschen")
+                    Text("Löschen", color = Color.Black)
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Abbrechen")
+                OutlinedButton(
+                    onClick = { showDeleteConfirmation = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                ) {
+                    Text("Abbrechen", color = Color.Black)
                 }
             }
         )

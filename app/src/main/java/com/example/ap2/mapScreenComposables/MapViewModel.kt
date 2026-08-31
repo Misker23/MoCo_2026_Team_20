@@ -3,6 +3,7 @@ package com.example.ap2.mapScreenComposables
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -12,11 +13,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ap2.data_models.MapMarkerUiState
 import com.example.ap2.data_models.MarkerDto
+import com.example.ap2.data_models.ProfileDto
 import com.example.ap2.repositories.MapRepository
 import com.example.ap2.supabase
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,6 +59,45 @@ class MapViewModel : ViewModel() {
 
     var isFollowingUser by mutableStateOf(false)
         private set
+
+    // Gesamt Distanz zurückgelegt
+    var totalDistance by mutableStateOf(0f)
+    private var lastStepPosition: Position? = null
+
+    // Durchschnittliche Schrittlänge in Meter
+    private val stepLength = 0.75f
+
+    val stepsFromDistance: Int
+        get() = (totalDistance / stepLength).toInt()
+
+    // für die Blickrichtung
+    var userBearing by mutableStateOf(0f)
+
+    // Profil aus Datenbank laden
+    var currentUserProfile by mutableStateOf<ProfileDto?>(null)
+        private set
+
+    val ownMarkersCount by derivedStateOf {
+        markerList.count { it.user_id == supabase.auth.currentUserOrNull()?.id }
+    }
+
+    val markersSharedWithMeCount by derivedStateOf {
+        val myId = supabase.auth.currentUserOrNull()?.id
+        markerList.count { it.user_id != myId && it.user_id.isNotEmpty()}
+    }
+
+    private var isFogUpdateInProgress = false
+
+    var isDarkMode by mutableStateOf(false) // Standardmäßig Light Mode
+        private set
+
+    val mapStyle: String
+        get() = if (isDarkMode) {
+            "https://tiles.openfreemap.org/styles/dark"
+        } else {
+            "https://tiles.openfreemap.org/styles/liberty"
+        }
+
 
     // --- REPOSITORY INITIALISIERUNG & FLOW OBSERVATION ---
 
@@ -180,7 +222,25 @@ class MapViewModel : ViewModel() {
     }
 
     fun updateUserPosition(position: Position) {
+        if (lastStepPosition == null) {
+            lastStepPosition = position
+            userPosition = position
+            checkFogUpdate(position)
+        }
+
+        // 2. Bewegung berechnen
+        val previousPosition = lastStepPosition!!
         userPosition = position
+        lastStepPosition = position // Aktuelle Position für das nächste Mal merken
+
+        val distanceMoved = distanceBetween(previousPosition, position)
+
+        // 3. Schritte zählen (Filter: Nur Bewegungen > 2 Meter zählen gegen GPS-Rauschen)
+        if (distanceMoved > 2.0f) {
+            totalDistance += distanceMoved
+        }
+
+        // 4. Fog-Logik anstoßen
         checkFogUpdate(position)
     }
 
@@ -197,6 +257,8 @@ class MapViewModel : ViewModel() {
     }
 
     private fun checkFogUpdate(position: Position) {
+        if (isFogUpdateInProgress) return
+
         val lastPosition = lastFogPosition
 
         if (lastPosition == null) {
@@ -214,6 +276,7 @@ class MapViewModel : ViewModel() {
     }
 
     private fun addFogPoint(position: Position) {
+        isFogUpdateInProgress = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // 1. Lokal puffern für Offline-Sync
@@ -245,7 +308,7 @@ class MapViewModel : ViewModel() {
             try {
                 val user = supabase.auth.currentUserOrNull() ?: return@launch
 
-                supabase.postgrest.rpc("ensure_user_fog")
+
                 val result = supabase.postgrest.rpc("get_user_fog")
 
                 withContext(Dispatchers.Main) {
@@ -253,6 +316,8 @@ class MapViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("MapViewModel", "Fehler beim Laden des Fogs: ${e.message}")
+            } finally {
+                isFogUpdateInProgress = false
             }
         }
     }
@@ -287,6 +352,74 @@ class MapViewModel : ViewModel() {
                 )
             } catch (e: Exception) {
                 Log.e("MapViewModel", "Fehler beim Aktualisieren: ${e.message}", e)
+            }
+        }
+    }
+
+    fun initializeFog() {
+        viewModelScope.launch {
+            try {
+                supabase.postgrest.rpc("ensure_user_fog")
+                loadFog()
+            } catch (e: Exception) { /* ... */ }
+        }
+    }
+
+    fun toggleDarkMode(enabled: Boolean) {
+        isDarkMode = enabled
+    }
+
+    fun fetchCurrentUserProfile() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = supabase.auth.currentUserOrNull() ?: return@launch
+            try {
+                val profile = supabase.postgrest.from("profiles")
+                    .select() { filter { eq("id", user.id) } }
+                    .decodeSingle<ProfileDto>()
+                withContext(Dispatchers.Main) { currentUserProfile = profile }
+            } catch (e: Exception) { /* Log error */ }
+        }
+    }
+
+    fun updateUsername(newUsername: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = supabase.auth.currentUserOrNull() ?: return@launch
+            try {
+                supabase.postgrest.from("profiles")
+                    .update({ set("username", newUsername) }) { filter { eq("id", user.id) } }
+                fetchCurrentUserProfile()
+            } catch (e: Exception) { /* Log error */ }
+        }
+    }
+
+    fun updateProfileImage(imageBytes: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = supabase.auth.currentUserOrNull() ?: return@launch
+            try {
+                // 1. Bild in den Supabase Storage hochladen
+                // Wir nutzen die User-ID als Dateinamen, um das alte Bild zu überschreiben
+                val fileName = "profile_${user.id}.jpg"
+                val bucket = supabase.storage.from("avatars")
+
+                // 'upsert = true' sorgt dafür, dass die Datei ersetzt wird, falls sie schon existiert
+                bucket.upload(fileName, imageBytes, upsert = true)
+
+                // 2. Die öffentliche URL des hochgeladenen Bildes abrufen
+                val avatarUrl = bucket.publicUrl(fileName)
+
+                // 3. Die URL in der 'profiles' Tabelle in der Datenbank speichern
+                supabase.postgrest.from("profiles").update({
+                    set("avatar_url", avatarUrl) // Prüfe, ob die Spalte in deiner DB 'image_url' heißt
+                }) {
+                    filter { eq("id", user.id) }
+                }
+
+                // 4. Das Profil neu laden, damit die UI das neue Bild sofort anzeigt
+                fetchCurrentUserProfile()
+
+                Log.d("MapViewModel", "Profilbild erfolgreich aktualisiert: $avatarUrl")
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Fehler beim Profilbild-Update: ${e.message}", e)
             }
         }
     }

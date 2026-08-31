@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,7 +37,7 @@ fun AuthScreenCompose(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A))
+            .background(MaterialTheme.colorScheme.primary)
             .systemBarsPadding()
             .padding(24.dp),
         contentAlignment = Alignment.Center
@@ -48,14 +49,14 @@ fun AuthScreenCompose(
         ) {
             Text(
                 text = if (viewModel.isSignUpMode) "Account erstellen" else "Willkommen zurück",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                text = if (viewModel.isSignUpMode) "Melde dich an, um Marker & Freunde zu teilen" else "Gib deine Daten ein, um fortzufahren",
-                color = Color.Gray,
+                text = if (viewModel.isSignUpMode) "Registriere dich um deine Umgebung zu erkunden und um Marker mit Freunden zu teilen" else "Gib deine Daten ein, um fortzufahren",
+                color = MaterialTheme.colorScheme.tertiary,
                 fontSize = 14.sp
             )
 
@@ -70,10 +71,16 @@ fun AuthScreenCompose(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        cursorColor = MaterialTheme.colorScheme.secondary,
+                        selectionColors = TextSelectionColors(
+                            handleColor = MaterialTheme.colorScheme.secondary,
+                            backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                        ),
+                        focusedTextColor = MaterialTheme.colorScheme.secondary,
+                        unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                        focusedLabelColor = MaterialTheme.colorScheme.secondary,
                         focusedBorderColor = Color(0xFF2196F3),
-                        unfocusedBorderColor = Color.Gray
+                        unfocusedBorderColor = MaterialTheme.colorScheme.tertiary
                     )
                 )
             }
@@ -86,10 +93,16 @@ fun AuthScreenCompose(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    cursorColor = MaterialTheme.colorScheme.secondary,
+                    selectionColors = TextSelectionColors(
+                        handleColor = MaterialTheme.colorScheme.secondary,
+                        backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                    ),
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedLabelColor = MaterialTheme.colorScheme.secondary,
                     focusedBorderColor = Color(0xFF2196F3),
-                    unfocusedBorderColor = Color.Gray
+                    unfocusedBorderColor = MaterialTheme.colorScheme.tertiary
                 )
             )
 
@@ -102,10 +115,16 @@ fun AuthScreenCompose(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    cursorColor = MaterialTheme.colorScheme.secondary,
+                    selectionColors = TextSelectionColors(
+                        handleColor = MaterialTheme.colorScheme.secondary,
+                        backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                    ),
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedLabelColor = MaterialTheme.colorScheme.secondary,
                     focusedBorderColor = Color(0xFF2196F3),
-                    unfocusedBorderColor = Color.Gray
+                    unfocusedBorderColor = MaterialTheme.colorScheme.tertiary
                 )
             )
 
@@ -139,6 +158,7 @@ fun AuthScreenCompose(
                 } else {
                     Text(
                         text = if (viewModel.isSignUpMode) "Registrieren" else "Anmelden",
+                        color = MaterialTheme.colorScheme.secondary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )

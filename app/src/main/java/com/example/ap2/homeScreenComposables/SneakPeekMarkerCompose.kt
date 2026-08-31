@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -50,9 +51,8 @@ fun SneakPeekMarkerCompose(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onExpandRequested() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A).copy(alpha = 0.96f)),
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
             modifier = Modifier.height(100.dp), // Feste Höhe für die Vorschau
@@ -90,7 +90,7 @@ fun SneakPeekMarkerCompose(
             ) {
                 Text(
                     text = markerDto.description?.takeIf { it.isNotBlank() } ?: "Marker ohne Titel",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 2

@@ -43,8 +43,11 @@ import org.maplibre.compose.camera.CameraMoveReason
 import androidx.compose.ui.graphics.Color
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.layers.FillLayer
+import org.maplibre.compose.location.BearingWithAccuracy
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.sources.GeoJsonData
+import org.maplibre.spatialk.units.Bearing
+import org.maplibre.spatialk.units.extensions.degrees
 
 /**
  * Haupt-Kartenansicht. Verwaltet das Zeichnen der Karte, Marker-Overlays
@@ -122,13 +125,13 @@ fun MapScreen(
 
             LaunchedEffect(Unit) {
                 viewModel.loadMarkersForMap()
-                viewModel.loadFog()
+                viewModel.initializeFog()
             }
 
             // 1. --- KARTE ---
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
+                baseStyle = BaseStyle.Uri(viewModel.mapStyle),
                 cameraState = camera,
                 onMapClick = { pos, _ ->
                     viewModel.handleMapClick(pos)
@@ -142,22 +145,29 @@ fun MapScreen(
             ) {
                 if (viewModel.fogGeoJson != null) {
 
-                    val fogSource = rememberGeoJsonSource(
-                        data = GeoJsonData.JsonString(viewModel.fogGeoJson!!)
-                    )
+                    val fogSource = remember(viewModel.fogGeoJson) {
+                        GeoJsonData.JsonString(viewModel.fogGeoJson!!)
+                    }
+
+                    val geoJsonSource = rememberGeoJsonSource( fogSource)
 
                     FillLayer(
                         id = "fog-layer",
-                        source = fogSource,
-                        color = const(Color.DarkGray),
+                        source = geoJsonSource,
+                        color = const(Color.Gray),
                         opacity = const(0.98f)
                     )
+                }
+
+                val userBearingWithAccuracy = remember(viewModel.userBearing) {
+                    val bearing = Bearing.North + viewModel.userBearing.toDouble().degrees
+                    BearingWithAccuracy(bearing, null)
                 }
 
                 LocationPuck(
                     idPrefix = "user",
                     location = locationState.location,
-                    bearing = locationState.mostAccurateBearing(),
+                    bearing = userBearingWithAccuracy,
                     cameraState = camera
                 )
 
