@@ -93,7 +93,7 @@ fun MarkerWindow(
                         Image(bitmap = previewBitmap, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
                     !markerDto?.image_url.isNullOrEmpty() -> {
-                        AsyncImage(model = markerDto.image_url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        AsyncImage(model = "${markerDto.image_url}?v=${System.currentTimeMillis()}", contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     }
                     else -> { Text(if (isOwnMarker) "Bild hinzufügen" else "Kein Bild", color = Color.White) }
                 }

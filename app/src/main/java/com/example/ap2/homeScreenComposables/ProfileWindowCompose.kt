@@ -137,7 +137,7 @@ fun ProfileWindow(
 
                         !profile?.avatarUrl.isNullOrEmpty() -> {
                             AsyncImage(
-                                model = profile.avatarUrl,
+                                model = "${profile.avatarUrl}?v=${System.currentTimeMillis()}",
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop

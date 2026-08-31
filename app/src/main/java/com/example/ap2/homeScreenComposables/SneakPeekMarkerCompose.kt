@@ -68,7 +68,7 @@ fun SneakPeekMarkerCompose(
             ) {
                 if (!markerDto.image_url.isNullOrEmpty()) {
                     AsyncImage(
-                        model = markerDto.image_url,
+                        model = "${markerDto.image_url}?v=${System.currentTimeMillis()}",
                         contentDescription = "Marker Bild",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
